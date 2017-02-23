@@ -1,10 +1,11 @@
-/* Copyright 2004 Acegi Technology Pty Limited
+/*
+ * Copyright 2004 Acegi Technology Pty Limited
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *      http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -15,7 +16,7 @@
 
 package org.springframework.security.access.vote;
 
-import static org.junit.Assert.*;
+import static org.assertj.core.api.Assertions.*;
 
 import org.junit.*;
 import org.springframework.security.access.AccessDecisionVoter;
@@ -26,7 +27,6 @@ import org.springframework.security.authentication.TestingAuthenticationToken;
 
 import java.util.*;
 
-
 /**
  * Tests {@link ConsensusBased}.
  *
@@ -34,92 +34,94 @@ import java.util.*;
  */
 public class ConsensusBasedTests {
 
-    @Test(expected=AccessDeniedException.class)
-    public void testOneAffirmativeVoteOneDenyVoteOneAbstainVoteDeniesAccessWithoutDefault() throws Exception {
-        TestingAuthenticationToken auth = makeTestToken();
-        ConsensusBased mgr = makeDecisionManager();
-        mgr.setAllowIfEqualGrantedDeniedDecisions(false);
-        assertTrue(!mgr.isAllowIfEqualGrantedDeniedDecisions()); // check changed
+	@Test(expected = AccessDeniedException.class)
+	public void testOneAffirmativeVoteOneDenyVoteOneAbstainVoteDeniesAccessWithoutDefault()
+			throws Exception {
+		TestingAuthenticationToken auth = makeTestToken();
+		ConsensusBased mgr = makeDecisionManager();
+		mgr.setAllowIfEqualGrantedDeniedDecisions(false);
+		assertThat(!mgr.isAllowIfEqualGrantedDeniedDecisions()).isTrue(); // check changed
 
-        List<ConfigAttribute> config = SecurityConfig.createList("ROLE_1", "DENY_FOR_SURE");
+		List<ConfigAttribute> config = SecurityConfig.createList("ROLE_1",
+				"DENY_FOR_SURE");
 
-        mgr.decide(auth, new Object(), config);
-    }
+		mgr.decide(auth, new Object(), config);
+	}
 
-    @Test
-    public void testOneAffirmativeVoteOneDenyVoteOneAbstainVoteGrantsAccessWithDefault() throws Exception {
-        TestingAuthenticationToken auth = makeTestToken();
-        ConsensusBased mgr = makeDecisionManager();
+	@Test
+	public void testOneAffirmativeVoteOneDenyVoteOneAbstainVoteGrantsAccessWithDefault()
+			throws Exception {
+		TestingAuthenticationToken auth = makeTestToken();
+		ConsensusBased mgr = makeDecisionManager();
 
-        assertTrue(mgr.isAllowIfEqualGrantedDeniedDecisions()); // check default
+		assertThat(mgr.isAllowIfEqualGrantedDeniedDecisions()).isTrue(); // check default
 
-        List<ConfigAttribute> config = SecurityConfig.createList("ROLE_1", "DENY_FOR_SURE");
+		List<ConfigAttribute> config = SecurityConfig.createList("ROLE_1",
+				"DENY_FOR_SURE");
 
-        mgr.decide(auth, new Object(), config);
-        assertTrue(true);
-    }
+		mgr.decide(auth, new Object(), config);
 
-    @Test
-    public void testOneAffirmativeVoteTwoAbstainVotesGrantsAccess() throws Exception {
-        TestingAuthenticationToken auth = makeTestToken();
-        ConsensusBased mgr = makeDecisionManager();
+	}
 
-        mgr.decide(auth, new Object(), SecurityConfig.createList("ROLE_2"));
-        assertTrue(true);
-    }
+	@Test
+	public void testOneAffirmativeVoteTwoAbstainVotesGrantsAccess() throws Exception {
+		TestingAuthenticationToken auth = makeTestToken();
+		ConsensusBased mgr = makeDecisionManager();
 
-    @Test(expected=AccessDeniedException.class)
-    public void testOneDenyVoteTwoAbstainVotesDeniesAccess() throws Exception {
-        TestingAuthenticationToken auth = makeTestToken();
-        ConsensusBased mgr = makeDecisionManager();
+		mgr.decide(auth, new Object(), SecurityConfig.createList("ROLE_2"));
 
-        mgr.decide(auth, new Object(), SecurityConfig.createList("ROLE_WE_DO_NOT_HAVE"));
-        fail("Should have thrown AccessDeniedException");
-    }
+	}
 
-    @Test(expected=AccessDeniedException.class)
-    public void testThreeAbstainVotesDeniesAccessWithDefault() throws Exception {
-        TestingAuthenticationToken auth = makeTestToken();
-        ConsensusBased mgr = makeDecisionManager();
+	@Test(expected = AccessDeniedException.class)
+	public void testOneDenyVoteTwoAbstainVotesDeniesAccess() throws Exception {
+		TestingAuthenticationToken auth = makeTestToken();
+		ConsensusBased mgr = makeDecisionManager();
 
-        assertTrue(!mgr.isAllowIfAllAbstainDecisions()); // check default
+		mgr.decide(auth, new Object(), SecurityConfig.createList("ROLE_WE_DO_NOT_HAVE"));
+		fail("Should have thrown AccessDeniedException");
+	}
 
-        mgr.decide(auth, new Object(), SecurityConfig.createList("IGNORED_BY_ALL"));
-    }
+	@Test(expected = AccessDeniedException.class)
+	public void testThreeAbstainVotesDeniesAccessWithDefault() throws Exception {
+		TestingAuthenticationToken auth = makeTestToken();
+		ConsensusBased mgr = makeDecisionManager();
 
-    @Test
-    public void testThreeAbstainVotesGrantsAccessWithoutDefault() throws Exception {
-        TestingAuthenticationToken auth = makeTestToken();
-        ConsensusBased mgr = makeDecisionManager();
-        mgr.setAllowIfAllAbstainDecisions(true);
-        assertTrue(mgr.isAllowIfAllAbstainDecisions()); // check changed
+		assertThat(!mgr.isAllowIfAllAbstainDecisions()).isTrue(); // check default
 
-        mgr.decide(auth, new Object(), SecurityConfig.createList("IGNORED_BY_ALL"));
-    }
+		mgr.decide(auth, new Object(), SecurityConfig.createList("IGNORED_BY_ALL"));
+	}
 
-    @Test
-    public void testTwoAffirmativeVotesTwoAbstainVotesGrantsAccess() throws Exception {
-        TestingAuthenticationToken auth = makeTestToken();
-        ConsensusBased mgr = makeDecisionManager();
+	@Test
+	public void testThreeAbstainVotesGrantsAccessWithoutDefault() throws Exception {
+		TestingAuthenticationToken auth = makeTestToken();
+		ConsensusBased mgr = makeDecisionManager();
+		mgr.setAllowIfAllAbstainDecisions(true);
+		assertThat(mgr.isAllowIfAllAbstainDecisions()).isTrue(); // check changed
 
-        mgr.decide(auth, new Object(), SecurityConfig.createList("ROLE_1", "ROLE_2"));
-    }
+		mgr.decide(auth, new Object(), SecurityConfig.createList("IGNORED_BY_ALL"));
+	}
 
-    private ConsensusBased makeDecisionManager() {
-        ConsensusBased decisionManager = new ConsensusBased();
-        RoleVoter roleVoter = new RoleVoter();
-        DenyVoter denyForSureVoter = new DenyVoter();
-        DenyAgainVoter denyAgainForSureVoter = new DenyAgainVoter();
-        List<AccessDecisionVoter> voters = new Vector<AccessDecisionVoter>();
-        voters.add(roleVoter);
-        voters.add(denyForSureVoter);
-        voters.add(denyAgainForSureVoter);
-        decisionManager.setDecisionVoters(voters);
+	@Test
+	public void testTwoAffirmativeVotesTwoAbstainVotesGrantsAccess() throws Exception {
+		TestingAuthenticationToken auth = makeTestToken();
+		ConsensusBased mgr = makeDecisionManager();
 
-        return decisionManager;
-    }
+		mgr.decide(auth, new Object(), SecurityConfig.createList("ROLE_1", "ROLE_2"));
+	}
 
-    private TestingAuthenticationToken makeTestToken() {
-        return new TestingAuthenticationToken("somebody", "password", "ROLE_1", "ROLE_2");
-    }
+	private ConsensusBased makeDecisionManager() {
+		RoleVoter roleVoter = new RoleVoter();
+		DenyVoter denyForSureVoter = new DenyVoter();
+		DenyAgainVoter denyAgainForSureVoter = new DenyAgainVoter();
+		List<AccessDecisionVoter<? extends Object>> voters = new Vector<AccessDecisionVoter<? extends Object>>();
+		voters.add(roleVoter);
+		voters.add(denyForSureVoter);
+		voters.add(denyAgainForSureVoter);
+
+		return new ConsensusBased(voters);
+	}
+
+	private TestingAuthenticationToken makeTestToken() {
+		return new TestingAuthenticationToken("somebody", "password", "ROLE_1", "ROLE_2");
+	}
 }

@@ -1,10 +1,11 @@
-/* Copyright 2004, 2005, 2006 Acegi Technology Pty Limited
+/*
+ * Copyright 2004, 2005, 2006 Acegi Technology Pty Limited
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *      http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -29,136 +30,177 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.session.SessionInformation;
 import org.springframework.security.core.session.SessionRegistry;
-import org.springframework.security.web.DefaultRedirectStrategy;
 import org.springframework.security.web.RedirectStrategy;
+import org.springframework.security.web.authentication.logout.CompositeLogoutHandler;
 import org.springframework.security.web.authentication.logout.LogoutHandler;
 import org.springframework.security.web.authentication.logout.SecurityContextLogoutHandler;
 import org.springframework.security.web.util.UrlUtils;
 import org.springframework.util.Assert;
 import org.springframework.web.filter.GenericFilterBean;
 
-
 /**
  * Filter required by concurrent session handling package.
  * <p>
  * This filter performs two functions. First, it calls
- * {@link org.springframework.security.core.session.SessionRegistry#refreshLastRequest(String)} for each request
- * so that registered sessions always have a correct "last update" date/time. Second, it retrieves a
- * {@link org.springframework.security.core.session.SessionInformation} from the <code>SessionRegistry</code>
- * for each request and checks if the session has been marked as expired.
- * If it has been marked as expired, the configured logout handlers will be called (as happens with
- * {@link org.springframework.security.web.authentication.logout.LogoutFilter}), typically to invalidate the session.
- * A redirect to the expiredURL specified will be performed, and the session invalidation will cause an
- * {@link org.springframework.security.web.session.HttpSessionDestroyedEvent} to be published via the
- * {@link org.springframework.security.web.session.HttpSessionEventPublisher} registered in <code>web.xml</code>.</p>
+ * {@link org.springframework.security.core.session.SessionRegistry#refreshLastRequest(String)}
+ * for each request so that registered sessions always have a correct "last update"
+ * date/time. Second, it retrieves a
+ * {@link org.springframework.security.core.session.SessionInformation} from the
+ * <code>SessionRegistry</code> for each request and checks if the session has been marked
+ * as expired. If it has been marked as expired, the configured logout handlers will be
+ * called (as happens with
+ * {@link org.springframework.security.web.authentication.logout.LogoutFilter}), typically
+ * to invalidate the session. To handle the expired session a call to the {@link SessionInformationExpiredStrategy} is made.
+ * The session invalidation will cause an
+ * {@link org.springframework.security.web.session.HttpSessionDestroyedEvent} to be
+ * published via the
+ * {@link org.springframework.security.web.session.HttpSessionEventPublisher} registered
+ * in <code>web.xml</code>.
+ * </p>
  *
  * @author Ben Alex
+ * @author Eddú Meléndez
+ * @author Marten Deinum
  */
 public class ConcurrentSessionFilter extends GenericFilterBean {
-    //~ Instance fields ================================================================================================
 
-    private SessionRegistry sessionRegistry;
-    private String expiredUrl;
-    private LogoutHandler[] handlers = new LogoutHandler[] {new SecurityContextLogoutHandler()};
-    private RedirectStrategy redirectStrategy = new DefaultRedirectStrategy();
+	// ~ Instance fields
+	// ================================================================================================
 
-    //~ Methods ========================================================================================================
+	private final SessionRegistry sessionRegistry;
+	private String expiredUrl;
+	private RedirectStrategy redirectStrategy;
+	private LogoutHandler handlers = new CompositeLogoutHandler(new SecurityContextLogoutHandler());
+	private SessionInformationExpiredStrategy sessionInformationExpiredStrategy;
 
+	// ~ Methods
+	// ========================================================================================================
 
-    /**
-     * @deprecated Use constructor which injects the <tt>SessionRegistry</tt>.
-     */
-    public ConcurrentSessionFilter() {
-    }
+	public ConcurrentSessionFilter(SessionRegistry sessionRegistry) {
+		Assert.notNull(sessionRegistry, "SessionRegistry required");
+		this.sessionRegistry = sessionRegistry;
+		this.sessionInformationExpiredStrategy = new ResponseBodySessionInformationExpiredStrategy();
+	}
 
-    public ConcurrentSessionFilter(SessionRegistry sessionRegistry) {
-        this(sessionRegistry, null);
-    }
+	/**
+	 * Creates a new instance
+	 *
+	 * @param sessionRegistry the SessionRegistry to use
+	 * @param expiredUrl the URL to redirect to
+	 * @deprecated use {@link #ConcurrentSessionFilter(SessionRegistry, SessionInformationExpiredStrategy)} with {@link SimpleRedirectSessionInformationExpiredStrategy} instead.
+	 */
+	@Deprecated
+	public ConcurrentSessionFilter(SessionRegistry sessionRegistry, String expiredUrl) {
+		Assert.notNull(sessionRegistry, "SessionRegistry required");
+		Assert.isTrue(expiredUrl == null || UrlUtils.isValidRedirectUrl(expiredUrl),
+				expiredUrl + " isn't a valid redirect URL");
+		this.expiredUrl = expiredUrl;
+		this.sessionRegistry = sessionRegistry;
+		this.sessionInformationExpiredStrategy = new SessionInformationExpiredStrategy() {
 
-    public ConcurrentSessionFilter(SessionRegistry sessionRegistry, String expiredUrl) {
-        this.sessionRegistry = sessionRegistry;
-        this.expiredUrl = expiredUrl;
-    }
+			@Override
+			public void onExpiredSessionDetected(SessionInformationExpiredEvent event) throws IOException, ServletException {
+				HttpServletRequest request = event.getRequest();
+				HttpServletResponse response = event.getResponse();
+				SessionInformation info = event.getSessionInformation();
 
-    @Override
-    public void afterPropertiesSet() {
-        Assert.notNull(sessionRegistry, "SessionRegistry required");
-        Assert.isTrue(expiredUrl == null || UrlUtils.isValidRedirectUrl(expiredUrl),
-                expiredUrl + " isn't a valid redirect URL");
-    }
+				redirectStrategy.sendRedirect(request, response, determineExpiredUrl(request, info));
+			}
 
-    public void doFilter(ServletRequest req, ServletResponse res, FilterChain chain)
-            throws IOException, ServletException {
-        HttpServletRequest request = (HttpServletRequest) req;
-        HttpServletResponse response = (HttpServletResponse) res;
+		};
+	}
 
-        HttpSession session = request.getSession(false);
+	public ConcurrentSessionFilter(SessionRegistry sessionRegistry, SessionInformationExpiredStrategy sessionInformationExpiredStrategy) {
+		Assert.notNull(sessionRegistry, "sessionRegistry required");
+		Assert.notNull(sessionInformationExpiredStrategy, "sessionInformationExpiredStrategy cannot be null");
+		this.sessionRegistry = sessionRegistry;
+		this.sessionInformationExpiredStrategy = sessionInformationExpiredStrategy;
+	}
 
-        if (session != null) {
-            SessionInformation info = sessionRegistry.getSessionInformation(session.getId());
+	@Override
+	public void afterPropertiesSet() {
+		Assert.notNull(sessionRegistry, "SessionRegistry required");
+	}
 
-            if (info != null) {
-                if (info.isExpired()) {
-                    // Expired - abort processing
-                    doLogout(request, response);
+	public void doFilter(ServletRequest req, ServletResponse res, FilterChain chain)
+			throws IOException, ServletException {
+		HttpServletRequest request = (HttpServletRequest) req;
+		HttpServletResponse response = (HttpServletResponse) res;
 
-                    String targetUrl = determineExpiredUrl(request, info);
+		HttpSession session = request.getSession(false);
 
-                    if (targetUrl != null) {
-                        redirectStrategy.sendRedirect(request, response, targetUrl);
+		if (session != null) {
+			SessionInformation info = sessionRegistry.getSessionInformation(session
+					.getId());
 
-                        return;
-                    } else {
-                        response.getWriter().print("This session has been expired (possibly due to multiple concurrent " +
-                                "logins being attempted as the same user).");
-                        response.flushBuffer();
-                    }
+			if (info != null) {
+				if (info.isExpired()) {
+					// Expired - abort processing
+					if (logger.isDebugEnabled()) {
+						logger.debug("Requested session ID "
+								+ request.getRequestedSessionId() + " has expired.");
+					}
+					doLogout(request, response);
 
-                    return;
-                } else {
-                    // Non-expired - update last request date/time
-                    sessionRegistry.refreshLastRequest(info.getSessionId());
-                }
-            }
-        }
+					this.sessionInformationExpiredStrategy.onExpiredSessionDetected(new SessionInformationExpiredEvent(info, request, response));
+					return;
+				}
+				else {
+					// Non-expired - update last request date/time
+					sessionRegistry.refreshLastRequest(info.getSessionId());
+				}
+			}
+		}
 
-        chain.doFilter(request, response);
-    }
+		chain.doFilter(request, response);
+	}
 
-    protected String determineExpiredUrl(HttpServletRequest request, SessionInformation info) {
-        return expiredUrl;
-    }
+	/**
+	 * Determine the URL for expiration
+	 * @param request the HttpServletRequest
+	 * @param info the {@link SessionInformation}
+	 * @return the URL for expiration
+	 * @deprecated Use {@link #ConcurrentSessionFilter(SessionRegistry, SessionInformationExpiredStrategy)} instead.
+	 */
+	protected String determineExpiredUrl(HttpServletRequest request,
+			SessionInformation info) {
+		return expiredUrl;
+	}
 
-    private void doLogout(HttpServletRequest request, HttpServletResponse response) {
-        Authentication auth = SecurityContextHolder.getContext().getAuthentication();
+	private void doLogout(HttpServletRequest request, HttpServletResponse response) {
+		Authentication auth = SecurityContextHolder.getContext().getAuthentication();
 
-        for (LogoutHandler handler : handlers) {
-            handler.logout(request, response, auth);
-        }
-    }
+		this.handlers.logout(request, response, auth);
+	}
 
-    /**
-     * @deprecated use constructor injection instead
-     */
-    @Deprecated
-    public void setExpiredUrl(String expiredUrl) {
-        this.expiredUrl = expiredUrl;
-    }
+	public void setLogoutHandlers(LogoutHandler[] handlers) {
+		this.handlers = new CompositeLogoutHandler(handlers);
+	}
 
-    /**
-     * @deprecated use constructor injection instead
-     */
-    @Deprecated
-    public void setSessionRegistry(SessionRegistry sessionRegistry) {
-        this.sessionRegistry = sessionRegistry;
-    }
+	/**
+	 * Sets the {@link RedirectStrategy} used with {@link #ConcurrentSessionFilter(SessionRegistry, String)}
+	 * @param redirectStrategy the {@link RedirectStrategy} to use
+	 * @deprecated use {@link #ConcurrentSessionFilter(SessionRegistry, SessionInformationExpiredStrategy)} instead.
+	 */
+	public void setRedirectStrategy(RedirectStrategy redirectStrategy) {
+		this.redirectStrategy = redirectStrategy;
+	}
 
-    public void setLogoutHandlers(LogoutHandler[] handlers) {
-        Assert.notNull(handlers);
-        this.handlers = handlers;
-    }
-
-    public void setRedirectStrategy(RedirectStrategy redirectStrategy) {
-        this.redirectStrategy = redirectStrategy;
-    }
+	/**
+	 * A {@link SessionInformationExpiredStrategy} that writes an error message to the response body.
+	 * @author Rob Winch
+	 * @since 4.2
+	 */
+	private static final class ResponseBodySessionInformationExpiredStrategy
+			implements SessionInformationExpiredStrategy {
+		@Override
+		public void onExpiredSessionDetected(SessionInformationExpiredEvent event)
+				throws IOException, ServletException {
+			HttpServletResponse response = event.getResponse();
+			response.getWriter().print(
+					"This session has been expired (possibly due to multiple concurrent "
+							+ "logins being attempted as the same user).");
+			response.flushBuffer();
+		}
+	}
 }

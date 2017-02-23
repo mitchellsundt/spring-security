@@ -15,12 +15,6 @@
  */
 package org.springframework.security.web.csrf;
 
-import static org.mockito.Matchers.any;
-import static org.mockito.Matchers.eq;
-import static org.mockito.Mockito.never;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
-
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
@@ -29,9 +23,17 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mock;
 import org.mockito.runners.MockitoJUnitRunner;
+
 import org.springframework.mock.web.MockHttpServletRequest;
 import org.springframework.mock.web.MockHttpServletResponse;
 import org.springframework.security.authentication.TestingAuthenticationToken;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
 
 /**
  * @author Rob Winch
@@ -39,49 +41,91 @@ import org.springframework.security.authentication.TestingAuthenticationToken;
  */
 @RunWith(MockitoJUnitRunner.class)
 public class CsrfAuthenticationStrategyTests {
-    @Mock
-    private CsrfTokenRepository csrfTokenRepository;
+	@Mock
+	private CsrfTokenRepository csrfTokenRepository;
 
-    private MockHttpServletRequest request;
+	private MockHttpServletRequest request;
 
-    private MockHttpServletResponse response;
+	private MockHttpServletResponse response;
 
-    private CsrfAuthenticationStrategy strategy;
+	private CsrfAuthenticationStrategy strategy;
 
-    private CsrfToken existingToken;
+	private CsrfToken existingToken;
 
-    private CsrfToken generatedToken;
+	private CsrfToken generatedToken;
 
-    @Before
-    public void setup() {
-        request = new MockHttpServletRequest();
-        response = new MockHttpServletResponse();
-        strategy = new CsrfAuthenticationStrategy(csrfTokenRepository);
-        existingToken = new DefaultCsrfToken("_csrf", "_csrf", "1");
-        generatedToken = new DefaultCsrfToken("_csrf", "_csrf", "2");
-    }
+	@Before
+	public void setup() {
+		this.response = new MockHttpServletResponse();
+		this.request = new MockHttpServletRequest();
+		this.request.setAttribute(HttpServletResponse.class.getName(), this.response);
+		this.strategy = new CsrfAuthenticationStrategy(this.csrfTokenRepository);
+		this.existingToken = new DefaultCsrfToken("_csrf", "_csrf", "1");
+		this.generatedToken = new DefaultCsrfToken("_csrf", "_csrf", "2");
+	}
 
-    @Test(expected = IllegalArgumentException.class)
-    public void constructorNullCsrfTokenRepository() {
-        new CsrfAuthenticationStrategy(null);
-    }
+	@Test(expected = IllegalArgumentException.class)
+	public void constructorNullCsrfTokenRepository() {
+		new CsrfAuthenticationStrategy(null);
+	}
 
-    @Test
-    public void logoutRemovesCsrfTokenAndSavesNew() {
-        when(csrfTokenRepository.loadToken(request)).thenReturn(existingToken);
-        when(csrfTokenRepository.generateToken(request)).thenReturn(generatedToken);
-        strategy.onAuthentication(new TestingAuthenticationToken("user", "password", "ROLE_USER"), request, response);
+	@Test
+	public void logoutRemovesCsrfTokenAndSavesNew() {
+		when(this.csrfTokenRepository.loadToken(this.request))
+				.thenReturn(this.existingToken);
+		when(this.csrfTokenRepository.generateToken(this.request))
+				.thenReturn(this.generatedToken);
+		this.strategy.onAuthentication(
+				new TestingAuthenticationToken("user", "password", "ROLE_USER"),
+				this.request, this.response);
 
-        verify(csrfTokenRepository).saveToken(null, request, response);
-        // SEC-2404
-        verify(csrfTokenRepository).saveToken(eq(generatedToken), eq(request), eq(response));
-    }
+		verify(this.csrfTokenRepository).saveToken(null, this.request, this.response);
+		verify(this.csrfTokenRepository).saveToken(eq(this.generatedToken),
+				any(HttpServletRequest.class), any(HttpServletResponse.class));
+		// SEC-2404, SEC-2832
+		CsrfToken tokenInRequest = (CsrfToken) this.request
+				.getAttribute(CsrfToken.class.getName());
+		assertThat(tokenInRequest.getToken()).isSameAs(this.generatedToken.getToken());
+		assertThat(tokenInRequest.getHeaderName())
+				.isSameAs(this.generatedToken.getHeaderName());
+		assertThat(tokenInRequest.getParameterName())
+				.isSameAs(this.generatedToken.getParameterName());
+		assertThat(this.request.getAttribute(this.generatedToken.getParameterName()))
+				.isSameAs(tokenInRequest);
+	}
 
-    @Test
-    public void logoutRemovesNoActionIfNullToken() {
-        strategy.onAuthentication(new TestingAuthenticationToken("user", "password", "ROLE_USER"), request, response);
+	// SEC-2872
+	@Test
+	public void delaySavingCsrf() {
+		this.strategy = new CsrfAuthenticationStrategy(
+				new LazyCsrfTokenRepository(this.csrfTokenRepository));
 
-        verify(csrfTokenRepository,never()).saveToken(any(CsrfToken.class), any(HttpServletRequest.class), any(HttpServletResponse.class));
-    }
+		when(this.csrfTokenRepository.loadToken(this.request))
+				.thenReturn(this.existingToken);
+		when(this.csrfTokenRepository.generateToken(this.request))
+				.thenReturn(this.generatedToken);
+		this.strategy.onAuthentication(
+				new TestingAuthenticationToken("user", "password", "ROLE_USER"),
+				this.request, this.response);
+
+		verify(this.csrfTokenRepository).saveToken(null, this.request, this.response);
+		verify(this.csrfTokenRepository, never()).saveToken(eq(this.generatedToken),
+				any(HttpServletRequest.class), any(HttpServletResponse.class));
+
+		CsrfToken tokenInRequest = (CsrfToken) this.request
+				.getAttribute(CsrfToken.class.getName());
+		tokenInRequest.getToken();
+		verify(this.csrfTokenRepository).saveToken(eq(this.generatedToken),
+				any(HttpServletRequest.class), any(HttpServletResponse.class));
+	}
+
+	@Test
+	public void logoutRemovesNoActionIfNullToken() {
+		this.strategy.onAuthentication(
+				new TestingAuthenticationToken("user", "password", "ROLE_USER"),
+				this.request, this.response);
+
+		verify(this.csrfTokenRepository, never()).saveToken(any(CsrfToken.class),
+				any(HttpServletRequest.class), any(HttpServletResponse.class));
+	}
 }
-

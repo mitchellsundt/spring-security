@@ -1,10 +1,11 @@
-/* Copyright 2004, 2005, 2006 Acegi Technology Pty Limited
+/*
+ * Copyright 2004, 2005, 2006 Acegi Technology Pty Limited
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *      http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,16 +19,19 @@ package org.springframework.security.authentication.event;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 
-
 /**
- * Application event which indicates authentication failure due to the user's account being disabled.
+ * Application event which indicates authentication failure due to the user's account
+ * being disabled.
  *
  * @author Ben Alex
  */
-public class AuthenticationFailureDisabledEvent extends AbstractAuthenticationFailureEvent {
-    //~ Constructors ===================================================================================================
+public class AuthenticationFailureDisabledEvent extends
+		AbstractAuthenticationFailureEvent {
+	// ~ Constructors
+	// ===================================================================================================
 
-    public AuthenticationFailureDisabledEvent(Authentication authentication, AuthenticationException exception) {
-        super(authentication, exception);
-    }
+	public AuthenticationFailureDisabledEvent(Authentication authentication,
+			AuthenticationException exception) {
+		super(authentication, exception);
+	}
 }

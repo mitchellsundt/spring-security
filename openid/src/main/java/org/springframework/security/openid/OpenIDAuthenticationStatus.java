@@ -1,10 +1,11 @@
-/* Copyright 2004, 2005, 2006 Acegi Technology Pty Limited
+/*
+ * Copyright 2004, 2005, 2006 Acegi Technology Pty Limited
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *      http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -23,30 +24,34 @@ package org.springframework.security.openid;
  */
 public enum OpenIDAuthenticationStatus {
 
-    /** This code indicates a successful authentication request */
-    SUCCESS("success"),
+	/** This code indicates a successful authentication request */
+	SUCCESS("success"),
 
-    /** This code indicates a failed authentication request */
-    FAILURE("failure"),
+	/** This code indicates a failed authentication request */
+	FAILURE("failure"),
 
-    /** This code indicates the server reported an error */
-    ERROR("error"),
+	/** This code indicates the server reported an error */
+	ERROR("error"),
 
-    /** This code indicates that the user needs to do additional work to prove their identity */
-    SETUP_NEEDED("setup needed"),
+	/**
+	 * This code indicates that the user needs to do additional work to prove their
+	 * identity
+	 */
+	SETUP_NEEDED("setup needed"),
 
-    /** This code indicates that the user cancelled their login request */
-    CANCELLED("cancelled");
+	/** This code indicates that the user cancelled their login request */
+	CANCELLED("cancelled");
 
-    private final String name;
+	private final String name;
 
-    //~ Constructors ===================================================================================================
+	// ~ Constructors
+	// ===================================================================================================
 
-    private OpenIDAuthenticationStatus(String name) {
-        this.name = name;
-    }
+	private OpenIDAuthenticationStatus(String name) {
+		this.name = name;
+	}
 
-    public String toString() {
-        return name;
-    }
+	public String toString() {
+		return name;
+	}
 }

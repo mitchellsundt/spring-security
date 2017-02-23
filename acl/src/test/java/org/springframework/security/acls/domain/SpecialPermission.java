@@ -1,10 +1,11 @@
-/* Copyright 2004, 2005, 2006 Acegi Technology Pty Limited
+/*
+ * Copyright 2004, 2005, 2006 Acegi Technology Pty Limited
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *      http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,17 +17,16 @@ package org.springframework.security.acls.domain;
 
 import org.springframework.security.acls.model.Permission;
 
-
 /**
  * A test permission.
  *
  * @author Ben Alex
  */
 public class SpecialPermission extends BasePermission {
-    public static final Permission ENTER = new SpecialPermission(1 << 5, 'E'); // 32
-    public static final Permission LEAVE = new SpecialPermission(1 << 6, 'L');
+	public static final Permission ENTER = new SpecialPermission(1 << 5, 'E'); // 32
+	public static final Permission LEAVE = new SpecialPermission(1 << 6, 'L');
 
-    protected SpecialPermission(int mask, char code) {
-        super(mask, code);
-    }
+	protected SpecialPermission(int mask, char code) {
+		super(mask, code);
+	}
 }

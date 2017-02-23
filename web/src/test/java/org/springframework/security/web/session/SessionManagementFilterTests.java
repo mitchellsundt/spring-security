@@ -1,22 +1,21 @@
 /*
- * Copyright 2002-2013 the original author or authors.
+ * Copyright 2002-2016 the original author or authors.
  *
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not
- * use this file except in compliance with the License. You may obtain a copy of
- * the License at
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ *      http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS, WITHOUT
- * WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the
- * License for the specific language governing permissions and limitations under
- * the License.
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 package org.springframework.security.web.session;
 
-import static org.junit.Assert.*;
-import static org.mockito.Matchers.any;
+import static org.assertj.core.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 import javax.servlet.FilterChain;
@@ -43,144 +42,147 @@ import org.springframework.security.web.context.SecurityContextRepository;
  */
 public class SessionManagementFilterTests {
 
-    @After
-    public void clearContext() {
-        SecurityContextHolder.clearContext();
-    }
+	@After
+	public void clearContext() {
+		SecurityContextHolder.clearContext();
+	}
 
-    @Test
-    public void newSessionShouldNotBeCreatedIfSessionExistsAndUserIsNotAuthenticated() throws Exception {
-        SecurityContextRepository repo = mock(SecurityContextRepository.class);
-        SessionManagementFilter filter = new SessionManagementFilter(repo);
-        HttpServletRequest request = new MockHttpServletRequest();
-        String sessionId = request.getSession().getId();
+	@Test
+	public void newSessionShouldNotBeCreatedIfSessionExistsAndUserIsNotAuthenticated()
+			throws Exception {
+		SecurityContextRepository repo = mock(SecurityContextRepository.class);
+		SessionManagementFilter filter = new SessionManagementFilter(repo);
+		HttpServletRequest request = new MockHttpServletRequest();
+		String sessionId = request.getSession().getId();
 
-        filter.doFilter(request, new MockHttpServletResponse(), new MockFilterChain());
+		filter.doFilter(request, new MockHttpServletResponse(), new MockFilterChain());
 
-        assertEquals(sessionId, request.getSession().getId());
-    }
+		assertThat(request.getSession().getId()).isEqualTo(sessionId);
+	}
 
-    @Test
-    public void strategyIsNotInvokedIfSecurityContextAlreadyExistsForRequest() throws Exception {
-        SecurityContextRepository repo = mock(SecurityContextRepository.class);
-        SessionAuthenticationStrategy strategy = mock(SessionAuthenticationStrategy.class);
-        // mock that repo contains a security context
-        when(repo.containsContext(any(HttpServletRequest.class))).thenReturn(true);
-        SessionManagementFilter filter = new SessionManagementFilter(repo);
-        filter.setSessionAuthenticationStrategy(strategy);
-        HttpServletRequest request = new MockHttpServletRequest();
-        authenticateUser();
+	@Test
+	public void strategyIsNotInvokedIfSecurityContextAlreadyExistsForRequest()
+			throws Exception {
+		SecurityContextRepository repo = mock(SecurityContextRepository.class);
+		SessionAuthenticationStrategy strategy = mock(SessionAuthenticationStrategy.class);
+		// mock that repo contains a security context
+		when(repo.containsContext(any(HttpServletRequest.class))).thenReturn(true);
+		SessionManagementFilter filter = new SessionManagementFilter(repo, strategy);
+		HttpServletRequest request = new MockHttpServletRequest();
+		authenticateUser();
 
-        filter.doFilter(request, new MockHttpServletResponse(), new MockFilterChain());
+		filter.doFilter(request, new MockHttpServletResponse(), new MockFilterChain());
 
-        verifyZeroInteractions(strategy);
-    }
+		verifyZeroInteractions(strategy);
+	}
 
-    @Test
-    public void strategyIsNotInvokedIfAuthenticationIsNull() throws Exception {
-        SecurityContextRepository repo = mock(SecurityContextRepository.class);
-        SessionAuthenticationStrategy strategy = mock(SessionAuthenticationStrategy.class);
-        SessionManagementFilter filter = new SessionManagementFilter(repo);
-        filter.setSessionAuthenticationStrategy(strategy);
-        HttpServletRequest request = new MockHttpServletRequest();
+	@Test
+	public void strategyIsNotInvokedIfAuthenticationIsNull() throws Exception {
+		SecurityContextRepository repo = mock(SecurityContextRepository.class);
+		SessionAuthenticationStrategy strategy = mock(SessionAuthenticationStrategy.class);
+		SessionManagementFilter filter = new SessionManagementFilter(repo, strategy);
+		HttpServletRequest request = new MockHttpServletRequest();
 
-        filter.doFilter(request, new MockHttpServletResponse(), new MockFilterChain());
+		filter.doFilter(request, new MockHttpServletResponse(), new MockFilterChain());
 
-        verifyZeroInteractions(strategy);
-    }
+		verifyZeroInteractions(strategy);
+	}
 
-    @Test
-    public void strategyIsInvokedIfUserIsNewlyAuthenticated() throws Exception {
-        SecurityContextRepository repo = mock(SecurityContextRepository.class);
-        // repo will return false to containsContext()
-        SessionAuthenticationStrategy strategy = mock(SessionAuthenticationStrategy.class);
-        SessionManagementFilter filter = new SessionManagementFilter(repo);
-        filter.setSessionAuthenticationStrategy(strategy);
-        HttpServletRequest request = new MockHttpServletRequest();
-        authenticateUser();
+	@Test
+	public void strategyIsInvokedIfUserIsNewlyAuthenticated() throws Exception {
+		SecurityContextRepository repo = mock(SecurityContextRepository.class);
+		// repo will return false to containsContext()
+		SessionAuthenticationStrategy strategy = mock(SessionAuthenticationStrategy.class);
+		SessionManagementFilter filter = new SessionManagementFilter(repo, strategy);
+		HttpServletRequest request = new MockHttpServletRequest();
+		authenticateUser();
 
-        filter.doFilter(request, new MockHttpServletResponse(), new MockFilterChain());
+		filter.doFilter(request, new MockHttpServletResponse(), new MockFilterChain());
 
-        verify(strategy).onAuthentication(any(Authentication.class), any(HttpServletRequest.class), any(HttpServletResponse.class));
-        // Check that it is only applied once to the request
-        filter.doFilter(request, new MockHttpServletResponse(), new MockFilterChain());
-        verifyNoMoreInteractions(strategy);
-    }
+		verify(strategy).onAuthentication(any(Authentication.class),
+				any(HttpServletRequest.class), any(HttpServletResponse.class));
+		// Check that it is only applied once to the request
+		filter.doFilter(request, new MockHttpServletResponse(), new MockFilterChain());
+		verifyNoMoreInteractions(strategy);
+	}
 
-    @Test
-    public void strategyFailureInvokesFailureHandler() throws Exception {
-        SecurityContextRepository repo = mock(SecurityContextRepository.class);
-        // repo will return false to containsContext()
-        SessionAuthenticationStrategy strategy = mock(SessionAuthenticationStrategy.class);
+	@Test
+	public void strategyFailureInvokesFailureHandler() throws Exception {
+		SecurityContextRepository repo = mock(SecurityContextRepository.class);
+		// repo will return false to containsContext()
+		SessionAuthenticationStrategy strategy = mock(SessionAuthenticationStrategy.class);
 
-        AuthenticationFailureHandler failureHandler = mock(AuthenticationFailureHandler.class);
-        SessionManagementFilter filter = new SessionManagementFilter(repo);
-        filter.setAuthenticationFailureHandler(failureHandler);
-        filter.setSessionAuthenticationStrategy(strategy);
-        HttpServletRequest request = new MockHttpServletRequest();
-        HttpServletResponse response = new MockHttpServletResponse();
-        FilterChain fc = mock(FilterChain.class);
-        authenticateUser();
-        SessionAuthenticationException exception = new SessionAuthenticationException("Failure");
-        doThrow(exception).when(strategy).onAuthentication(
-                SecurityContextHolder.getContext().getAuthentication(), request, response);
+		AuthenticationFailureHandler failureHandler = mock(AuthenticationFailureHandler.class);
+		SessionManagementFilter filter = new SessionManagementFilter(repo, strategy);
+		filter.setAuthenticationFailureHandler(failureHandler);
+		HttpServletRequest request = new MockHttpServletRequest();
+		HttpServletResponse response = new MockHttpServletResponse();
+		FilterChain fc = mock(FilterChain.class);
+		authenticateUser();
+		SessionAuthenticationException exception = new SessionAuthenticationException(
+				"Failure");
+		doThrow(exception).when(strategy)
+				.onAuthentication(SecurityContextHolder.getContext().getAuthentication(),
+						request, response);
 
-        filter.doFilter(request,response, fc);
-        verifyZeroInteractions(fc);
-        verify(failureHandler).onAuthenticationFailure(request, response, exception);
-    }
+		filter.doFilter(request, response, fc);
+		verifyZeroInteractions(fc);
+		verify(failureHandler).onAuthenticationFailure(request, response, exception);
+	}
 
-    @Test
-    public void responseIsRedirectedToTimeoutUrlIfSetAndSessionIsInvalid() throws Exception {
-        SecurityContextRepository repo = mock(SecurityContextRepository.class);
-        // repo will return false to containsContext()
-        SessionAuthenticationStrategy strategy = mock(SessionAuthenticationStrategy.class);
-        SessionManagementFilter filter = new SessionManagementFilter(repo);
-        filter.setSessionAuthenticationStrategy(strategy);
-        MockHttpServletRequest request = new MockHttpServletRequest();
-        request.setRequestedSessionId("xxx");
-        request.setRequestedSessionIdValid(false);
-        MockHttpServletResponse response = new MockHttpServletResponse();
+	@Test
+	public void responseIsRedirectedToTimeoutUrlIfSetAndSessionIsInvalid()
+			throws Exception {
+		SecurityContextRepository repo = mock(SecurityContextRepository.class);
+		// repo will return false to containsContext()
+		SessionAuthenticationStrategy strategy = mock(SessionAuthenticationStrategy.class);
+		SessionManagementFilter filter = new SessionManagementFilter(repo, strategy);
+		MockHttpServletRequest request = new MockHttpServletRequest();
+		request.setRequestedSessionId("xxx");
+		request.setRequestedSessionIdValid(false);
+		MockHttpServletResponse response = new MockHttpServletResponse();
 
-        filter.doFilter(request, response, new MockFilterChain());
-        assertNull(response.getRedirectedUrl());
+		filter.doFilter(request, response, new MockFilterChain());
+		assertThat(response.getRedirectedUrl()).isNull();
 
-        // Now set a redirect URL
-        request = new MockHttpServletRequest();
-        request.setRequestedSessionId("xxx");
-        request.setRequestedSessionIdValid(false);
-        SimpleRedirectInvalidSessionStrategy iss = new SimpleRedirectInvalidSessionStrategy("/timedOut");
-        iss.setCreateNewSession(true);
-        filter.setInvalidSessionStrategy(iss);
-        FilterChain fc = mock(FilterChain.class);
-        filter.doFilter(request, response, fc);
-        verifyZeroInteractions(fc);
+		// Now set a redirect URL
+		request = new MockHttpServletRequest();
+		request.setRequestedSessionId("xxx");
+		request.setRequestedSessionIdValid(false);
+		SimpleRedirectInvalidSessionStrategy iss = new SimpleRedirectInvalidSessionStrategy(
+				"/timedOut");
+		iss.setCreateNewSession(true);
+		filter.setInvalidSessionStrategy(iss);
+		FilterChain fc = mock(FilterChain.class);
+		filter.doFilter(request, response, fc);
+		verifyZeroInteractions(fc);
 
-        assertEquals("/timedOut", response.getRedirectedUrl());
-    }
+		assertThat(response.getRedirectedUrl()).isEqualTo("/timedOut");
+	}
 
-    @Test
-    public void customAuthenticationTrustResolver() throws Exception {
-        AuthenticationTrustResolver trustResolver= mock(AuthenticationTrustResolver.class);
-        SecurityContextRepository repo = mock(SecurityContextRepository.class);
-        SessionManagementFilter filter = new SessionManagementFilter(repo);
-        filter.setTrustResolver(trustResolver);
-        HttpServletRequest request = new MockHttpServletRequest();
-        authenticateUser();
+	@Test
+	public void customAuthenticationTrustResolver() throws Exception {
+		AuthenticationTrustResolver trustResolver = mock(AuthenticationTrustResolver.class);
+		SecurityContextRepository repo = mock(SecurityContextRepository.class);
+		SessionManagementFilter filter = new SessionManagementFilter(repo);
+		filter.setTrustResolver(trustResolver);
+		HttpServletRequest request = new MockHttpServletRequest();
+		authenticateUser();
 
-        filter.doFilter(request, new MockHttpServletResponse(), new MockFilterChain());
+		filter.doFilter(request, new MockHttpServletResponse(), new MockFilterChain());
 
-        verify(trustResolver).isAnonymous(any(Authentication.class));
-    }
+		verify(trustResolver).isAnonymous(any(Authentication.class));
+	}
 
-    @Test(expected = IllegalArgumentException.class)
-    public void setTrustResolverNull() {
-        SecurityContextRepository repo = mock(SecurityContextRepository.class);
-        SessionManagementFilter filter = new SessionManagementFilter(repo);
-        filter.setTrustResolver(null);
-    }
+	@Test(expected = IllegalArgumentException.class)
+	public void setTrustResolverNull() {
+		SecurityContextRepository repo = mock(SecurityContextRepository.class);
+		SessionManagementFilter filter = new SessionManagementFilter(repo);
+		filter.setTrustResolver(null);
+	}
 
-    private void authenticateUser() {
-        SecurityContextHolder.getContext().setAuthentication(new TestingAuthenticationToken("user", "pass"));
-    }
+	private void authenticateUser() {
+		SecurityContextHolder.getContext().setAuthentication(
+				new TestingAuthenticationToken("user", "pass"));
+	}
 }

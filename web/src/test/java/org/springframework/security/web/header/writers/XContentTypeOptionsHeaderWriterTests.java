@@ -15,7 +15,7 @@
  */
 package org.springframework.security.web.header.writers;
 
-import static org.fest.assertions.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThat;
 
 import java.util.Arrays;
 
@@ -30,24 +30,25 @@ import org.springframework.mock.web.MockHttpServletResponse;
  */
 public class XContentTypeOptionsHeaderWriterTests {
 
-    private MockHttpServletRequest request;
+	private MockHttpServletRequest request;
 
-    private MockHttpServletResponse response;
+	private MockHttpServletResponse response;
 
-    private XContentTypeOptionsHeaderWriter writer;
+	private XContentTypeOptionsHeaderWriter writer;
 
-    @Before
-    public void setup() {
-        request = new MockHttpServletRequest();
-        response = new MockHttpServletResponse();
-        writer = new XContentTypeOptionsHeaderWriter();
-    }
+	@Before
+	public void setup() {
+		request = new MockHttpServletRequest();
+		response = new MockHttpServletResponse();
+		writer = new XContentTypeOptionsHeaderWriter();
+	}
 
-    @Test
-    public void writeHeaders() {
-        writer.writeHeaders(request, response);
+	@Test
+	public void writeHeaders() {
+		writer.writeHeaders(request, response);
 
-        assertThat(response.getHeaderNames().size()).isEqualTo(1);
-        assertThat(response.getHeaderValues("X-Content-Type-Options")).isEqualTo(Arrays.asList("nosniff"));
-    }
+		assertThat(response.getHeaderNames().size()).isEqualTo(1);
+		assertThat(response.getHeaderValues("X-Content-Type-Options")).isEqualTo(
+				Arrays.asList("nosniff"));
+	}
 }

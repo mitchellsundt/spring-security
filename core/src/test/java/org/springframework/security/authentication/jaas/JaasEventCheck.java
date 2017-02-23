@@ -1,10 +1,11 @@
-/* Copyright 2004, 2005, 2006 Acegi Technology Pty Limited
+/*
+ * Copyright 2004, 2005, 2006 Acegi Technology Pty Limited
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *      http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -20,25 +21,26 @@ import org.springframework.security.authentication.jaas.event.JaasAuthentication
 import org.springframework.security.authentication.jaas.event.JaasAuthenticationFailedEvent;
 import org.springframework.security.authentication.jaas.event.JaasAuthenticationSuccessEvent;
 
-
 /**
  * @author Ray Krueger
  */
 public class JaasEventCheck implements ApplicationListener<JaasAuthenticationEvent> {
-    //~ Instance fields ================================================================================================
+	// ~ Instance fields
+	// ================================================================================================
 
-    JaasAuthenticationFailedEvent failedEvent;
-    JaasAuthenticationSuccessEvent successEvent;
+	JaasAuthenticationFailedEvent failedEvent;
+	JaasAuthenticationSuccessEvent successEvent;
 
-    //~ Methods ========================================================================================================
+	// ~ Methods
+	// ========================================================================================================
 
-    public void onApplicationEvent(JaasAuthenticationEvent event) {
-        if (event instanceof JaasAuthenticationFailedEvent) {
-            failedEvent = (JaasAuthenticationFailedEvent) event;
-        }
+	public void onApplicationEvent(JaasAuthenticationEvent event) {
+		if (event instanceof JaasAuthenticationFailedEvent) {
+			failedEvent = (JaasAuthenticationFailedEvent) event;
+		}
 
-        if (event instanceof JaasAuthenticationSuccessEvent) {
-            successEvent = (JaasAuthenticationSuccessEvent) event;
-        }
-    }
+		if (event instanceof JaasAuthenticationSuccessEvent) {
+			successEvent = (JaasAuthenticationSuccessEvent) event;
+		}
+	}
 }

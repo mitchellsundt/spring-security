@@ -1,10 +1,11 @@
-/* Copyright 2004, 2005, 2006 Acegi Technology Pty Limited
+/*
+ * Copyright 2004, 2005, 2006 Acegi Technology Pty Limited
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *      http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -15,7 +16,6 @@
 package org.springframework.security.acls.domain;
 
 import org.springframework.security.acls.model.Permission;
-
 
 /**
  * A set of standard permissions.
@@ -28,17 +28,17 @@ import org.springframework.security.acls.model.Permission;
  * @author Ben Alex
  */
 public class BasePermission extends AbstractPermission {
-    public static final Permission READ = new BasePermission(1 << 0, 'R'); // 1
-    public static final Permission WRITE = new BasePermission(1 << 1, 'W'); // 2
-    public static final Permission CREATE = new BasePermission(1 << 2, 'C'); // 4
-    public static final Permission DELETE = new BasePermission(1 << 3, 'D'); // 8
-    public static final Permission ADMINISTRATION = new BasePermission(1 << 4, 'A'); // 16
+	public static final Permission READ = new BasePermission(1 << 0, 'R'); // 1
+	public static final Permission WRITE = new BasePermission(1 << 1, 'W'); // 2
+	public static final Permission CREATE = new BasePermission(1 << 2, 'C'); // 4
+	public static final Permission DELETE = new BasePermission(1 << 3, 'D'); // 8
+	public static final Permission ADMINISTRATION = new BasePermission(1 << 4, 'A'); // 16
 
-    protected BasePermission(int mask) {
-       super(mask);
-    }
+	protected BasePermission(int mask) {
+		super(mask);
+	}
 
-    protected BasePermission(int mask, char code) {
-        super(mask, code);
-    }
+	protected BasePermission(int mask, char code) {
+		super(mask, code);
+	}
 }

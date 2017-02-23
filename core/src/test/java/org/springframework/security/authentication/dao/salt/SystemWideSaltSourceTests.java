@@ -1,10 +1,11 @@
-/* Copyright 2004, 2005, 2006 Acegi Technology Pty Limited
+/*
+ * Copyright 2004, 2005, 2006 Acegi Technology Pty Limited
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *      http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -15,68 +16,61 @@
 
 package org.springframework.security.authentication.dao.salt;
 
-import static org.fest.assertions.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.fail;
 
+import org.junit.Test;
 import org.springframework.security.authentication.dao.SystemWideSaltSource;
-
-import junit.framework.TestCase;
-
 
 /**
  * Tests {@link SystemWideSaltSource}.
  *
  * @author Ben Alex
  */
-public class SystemWideSaltSourceTests extends TestCase {
-    //~ Constructors ===================================================================================================
+public class SystemWideSaltSourceTests {
+	// ~ Constructors
+	// ===================================================================================================
 
-    public SystemWideSaltSourceTests() {
-        super();
-    }
+	public SystemWideSaltSourceTests() {
+		super();
+	}
 
-    public SystemWideSaltSourceTests(String arg0) {
-        super(arg0);
-    }
+	// ~ Methods
+	// ========================================================================================================
+	@Test
+	public void testDetectsMissingSystemWideSalt() throws Exception {
+		SystemWideSaltSource saltSource = new SystemWideSaltSource();
 
-    //~ Methods ========================================================================================================
+		try {
+			saltSource.afterPropertiesSet();
+			fail("Should have thrown IllegalArgumentException");
+		}
+		catch (IllegalArgumentException expected) {
+			assertThat(expected.getMessage()).isEqualTo("A systemWideSalt must be set");
+		}
+	}
 
-    public static void main(String[] args) {
-        junit.textui.TestRunner.run(SystemWideSaltSourceTests.class);
-    }
+	@Test
+	public void testGettersSetters() {
+		SystemWideSaltSource saltSource = new SystemWideSaltSource();
+		saltSource.setSystemWideSalt("helloWorld");
+		assertThat(saltSource.getSystemWideSalt()).isEqualTo("helloWorld");
+	}
 
-    public final void setUp() throws Exception {
-        super.setUp();
-    }
+	@Test
+	public void testNormalOperation() throws Exception {
+		SystemWideSaltSource saltSource = new SystemWideSaltSource();
+		saltSource.setSystemWideSalt("helloWorld");
+		saltSource.afterPropertiesSet();
+		assertThat(saltSource.getSalt(null)).isEqualTo("helloWorld");
+	}
 
-    public void testDetectsMissingSystemWideSalt() throws Exception {
-        SystemWideSaltSource saltSource = new SystemWideSaltSource();
-
-        try {
-            saltSource.afterPropertiesSet();
-            fail("Should have thrown IllegalArgumentException");
-        } catch (IllegalArgumentException expected) {
-            assertEquals("A systemWideSalt must be set", expected.getMessage());
-        }
-    }
-
-    public void testGettersSetters() {
-        SystemWideSaltSource saltSource = new SystemWideSaltSource();
-        saltSource.setSystemWideSalt("helloWorld");
-        assertEquals("helloWorld", saltSource.getSystemWideSalt());
-    }
-
-    public void testNormalOperation() throws Exception {
-        SystemWideSaltSource saltSource = new SystemWideSaltSource();
-        saltSource.setSystemWideSalt("helloWorld");
-        saltSource.afterPropertiesSet();
-        assertEquals("helloWorld", saltSource.getSalt(null));
-    }
-
-    // SEC-2173
-    public void testToString() {
-        String systemWideSalt = "helloWorld";
-        SystemWideSaltSource saltSource = new SystemWideSaltSource();
-        saltSource.setSystemWideSalt(systemWideSalt);
-        assertThat(saltSource.toString()).isEqualTo(systemWideSalt);
-    }
+	// SEC-2173
+	@Test
+	public void testToString() {
+		String systemWideSalt = "helloWorld";
+		SystemWideSaltSource saltSource = new SystemWideSaltSource();
+		saltSource.setSystemWideSalt(systemWideSalt);
+		assertThat(saltSource.toString()).isEqualTo(systemWideSalt);
+	}
 }

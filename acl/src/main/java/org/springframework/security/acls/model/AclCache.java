@@ -1,10 +1,11 @@
-/* Copyright 2004, 2005, 2006 Acegi Technology Pty Limited
+/*
+ * Copyright 2004, 2005, 2006 Acegi Technology Pty Limited
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *      http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,7 +19,6 @@ import org.springframework.security.acls.jdbc.JdbcAclService;
 
 import java.io.Serializable;
 
-
 /**
  * A caching layer for {@link JdbcAclService}.
  *
@@ -26,17 +26,18 @@ import java.io.Serializable;
  *
  */
 public interface AclCache {
-    //~ Methods ========================================================================================================
+	// ~ Methods
+	// ========================================================================================================
 
-    void evictFromCache(Serializable pk);
+	void evictFromCache(Serializable pk);
 
-    void evictFromCache(ObjectIdentity objectIdentity);
+	void evictFromCache(ObjectIdentity objectIdentity);
 
-    MutableAcl getFromCache(ObjectIdentity objectIdentity);
+	MutableAcl getFromCache(ObjectIdentity objectIdentity);
 
-    MutableAcl getFromCache(Serializable pk);
+	MutableAcl getFromCache(Serializable pk);
 
-    void putInCache(MutableAcl acl);
+	void putInCache(MutableAcl acl);
 
-    void clearCache();
+	void clearCache();
 }

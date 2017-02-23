@@ -1,10 +1,11 @@
-/* Copyright 2004, 2005, 2006 Acegi Technology Pty Limited
+/*
+ * Copyright 2004, 2005, 2006 Acegi Technology Pty Limited
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *      http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -16,20 +17,23 @@
 package org.springframework.security.authentication;
 
 /**
- * Provides a {@link org.springframework.security.core.Authentication#getDetails()} object for
- * a given web request.
+ * Provides a {@link org.springframework.security.core.Authentication#getDetails()} object
+ * for a given web request.
  *
  * @author Ben Alex
  */
 public interface AuthenticationDetailsSource<C, T> {
-    //~ Methods ========================================================================================================
+	// ~ Methods
+	// ========================================================================================================
 
-    /**
-     * Called by a class when it wishes a new authentication details instance to be created.
-     *
-     * @param context the request object, which may be used by the authentication details object
-     *
-     * @return a fully-configured authentication details instance
-     */
-    T buildDetails(C context);
+	/**
+	 * Called by a class when it wishes a new authentication details instance to be
+	 * created.
+	 *
+	 * @param context the request object, which may be used by the authentication details
+	 * object
+	 *
+	 * @return a fully-configured authentication details instance
+	 */
+	T buildDetails(C context);
 }

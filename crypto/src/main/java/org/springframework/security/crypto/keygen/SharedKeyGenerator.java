@@ -1,5 +1,5 @@
 /*
- * Copyright 2011 the original author or authors.
+ * Copyright 2011-2016 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,18 +24,18 @@ package org.springframework.security.crypto.keygen;
  */
 final class SharedKeyGenerator implements BytesKeyGenerator {
 
-    private byte[] sharedKey;
+	private byte[] sharedKey;
 
-    public SharedKeyGenerator(byte[] sharedKey) {
-        this.sharedKey = sharedKey;
-    }
+	public SharedKeyGenerator(byte[] sharedKey) {
+		this.sharedKey = sharedKey;
+	}
 
-    public int getKeyLength() {
-        return sharedKey.length;
-    }
+	public int getKeyLength() {
+		return sharedKey.length;
+	}
 
-    public byte[] generateKey() {
-        return sharedKey;
-    }
+	public byte[] generateKey() {
+		return sharedKey;
+	}
 
 }

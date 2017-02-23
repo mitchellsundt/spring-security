@@ -19,9 +19,11 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+
 import org.springframework.aop.framework.ProxyFactoryBean;
 import org.springframework.aop.target.LazyInitTargetSource;
 import org.springframework.beans.factory.BeanFactoryUtils;
@@ -29,11 +31,15 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Import;
 import org.springframework.core.annotation.AnnotationAwareOrderComparator;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.config.annotation.ObjectPostProcessor;
 import org.springframework.security.config.annotation.authentication.builders.AuthenticationManagerBuilder;
 import org.springframework.security.config.annotation.authentication.configurers.GlobalAuthenticationConfigurerAdapter;
+import org.springframework.security.config.annotation.configuration.ObjectPostProcessorConfiguration;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.util.Assert;
 
 /**
@@ -44,100 +50,165 @@ import org.springframework.util.Assert;
  *
  */
 @Configuration
+@Import(ObjectPostProcessorConfiguration.class)
 public class AuthenticationConfiguration {
-    private ApplicationContext applicationContext;
 
-    private AuthenticationManager authenticationManager;
+	private AtomicBoolean buildingAuthenticationManager = new AtomicBoolean();
 
-    private boolean authenticationManagerInitialized;
+	private ApplicationContext applicationContext;
 
-    private List<GlobalAuthenticationConfigurerAdapter> globalAuthConfigures = Collections.emptyList();
+	private AuthenticationManager authenticationManager;
 
-    private ObjectPostProcessor<Object> objectPostProcessor;
+	private boolean authenticationManagerInitialized;
 
-    @Bean
-    public AuthenticationManagerBuilder authenticationManagerBuilder(ObjectPostProcessor<Object> objectPostProcessor) {
-        return new AuthenticationManagerBuilder(objectPostProcessor);
-    }
+	private List<GlobalAuthenticationConfigurerAdapter> globalAuthConfigurers = Collections
+			.emptyList();
 
-    @Bean
-    public GlobalAuthenticationConfigurerAdapter enableGlobalAuthenticationAutowiredConfigurer(ApplicationContext context) {
-        return new EnableGlobalAuthenticationAutowiredConfigurer(context);
-    }
+	private ObjectPostProcessor<Object> objectPostProcessor;
 
-    public AuthenticationManager getAuthenticationManager() throws Exception {
-        if(authenticationManagerInitialized) {
-            return authenticationManager;
-        }
+	@Bean
+	public AuthenticationManagerBuilder authenticationManagerBuilder(
+			ObjectPostProcessor<Object> objectPostProcessor) {
+		return new AuthenticationManagerBuilder(objectPostProcessor);
+	}
 
-        AuthenticationManagerBuilder authBuilder = authenticationManagerBuilder(objectPostProcessor);
-        for(GlobalAuthenticationConfigurerAdapter config : globalAuthConfigures) {
-            authBuilder.apply(config);
-        }
+	@Bean
+	public static GlobalAuthenticationConfigurerAdapter enableGlobalAuthenticationAutowiredConfigurer(
+			ApplicationContext context) {
+		return new EnableGlobalAuthenticationAutowiredConfigurer(context);
+	}
 
-        authenticationManager = authBuilder.build();
+	@Bean
+	public static InitializeUserDetailsBeanManagerConfigurer initializeUserDetailsBeanManagerConfigurer(ApplicationContext context) {
+		return new InitializeUserDetailsBeanManagerConfigurer(context);
+	}
 
-        if(authenticationManager == null) {
-            authenticationManager = getAuthenticationMangerBean();
-        }
+	@Bean
+	public static InitializeAuthenticationProviderBeanManagerConfigurer initializeAuthenticationProviderBeanManagerConfigurer(ApplicationContext context) {
+		return new InitializeAuthenticationProviderBeanManagerConfigurer(context);
+	}
 
-        this.authenticationManagerInitialized = true;
-        return authenticationManager;
-    }
+	public AuthenticationManager getAuthenticationManager() throws Exception {
+		if (this.authenticationManagerInitialized) {
+			return this.authenticationManager;
+		}
+		AuthenticationManagerBuilder authBuilder = authenticationManagerBuilder(
+				this.objectPostProcessor);
+		if (this.buildingAuthenticationManager.getAndSet(true)) {
+			return new AuthenticationManagerDelegator(authBuilder);
+		}
 
-    @Autowired(required = false)
-    public void setGlobalAuthenticationConfigurers(List<GlobalAuthenticationConfigurerAdapter> configurers) throws Exception {
-        Collections.sort(configurers, AnnotationAwareOrderComparator.INSTANCE);
-        this.globalAuthConfigures = configurers;
-    }
+		for (GlobalAuthenticationConfigurerAdapter config : globalAuthConfigurers) {
+			authBuilder.apply(config);
+		}
 
-    @Autowired
-    public void setApplicationContext(ApplicationContext applicationContext) {
-        this.applicationContext = applicationContext;
-    }
+		authenticationManager = authBuilder.build();
 
-    @Autowired
-    public void setObjectPostProcessor(ObjectPostProcessor<Object> objectPostProcessor) {
-        this.objectPostProcessor = objectPostProcessor;
-    }
+		if (authenticationManager == null) {
+			authenticationManager = getAuthenticationManagerBean();
+		}
 
+		this.authenticationManagerInitialized = true;
+		return authenticationManager;
+	}
 
-    @SuppressWarnings("unchecked")
-    private <T> T lazyBean(Class<T> interfaceName) {
-        LazyInitTargetSource lazyTargetSource = new LazyInitTargetSource();
-        String[] beanNamesForType = BeanFactoryUtils.beanNamesForTypeIncludingAncestors(applicationContext, interfaceName);
-        if(beanNamesForType.length == 0) {
-            return null;
-        }
-        Assert.isTrue(beanNamesForType.length == 1 , "Expecting to only find a single bean for type " + interfaceName + ", but found " + Arrays.asList(beanNamesForType));
-        lazyTargetSource.setTargetBeanName(beanNamesForType[0]);
-        lazyTargetSource.setBeanFactory(applicationContext);
-        ProxyFactoryBean proxyFactory = new ProxyFactoryBean();
-        proxyFactory.setTargetSource(lazyTargetSource);
-        proxyFactory.setInterfaces(new Class[] { interfaceName, LazyBean.class });
-        return (T) proxyFactory.getObject();
-    }
+	@Autowired(required = false)
+	public void setGlobalAuthenticationConfigurers(
+			List<GlobalAuthenticationConfigurerAdapter> configurers) throws Exception {
+		Collections.sort(configurers, AnnotationAwareOrderComparator.INSTANCE);
+		this.globalAuthConfigurers = configurers;
+	}
 
-    private AuthenticationManager getAuthenticationMangerBean() {
-        return lazyBean(AuthenticationManager.class);
-    }
+	@Autowired
+	public void setApplicationContext(ApplicationContext applicationContext) {
+		this.applicationContext = applicationContext;
+	}
 
-    private interface LazyBean {}
+	@Autowired
+	public void setObjectPostProcessor(ObjectPostProcessor<Object> objectPostProcessor) {
+		this.objectPostProcessor = objectPostProcessor;
+	}
 
-    private static class EnableGlobalAuthenticationAutowiredConfigurer extends GlobalAuthenticationConfigurerAdapter {
-        private final ApplicationContext context;
-        private static final Log logger = LogFactory.getLog(EnableGlobalAuthenticationAutowiredConfigurer.class);
+	@SuppressWarnings("unchecked")
+	private <T> T lazyBean(Class<T> interfaceName) {
+		LazyInitTargetSource lazyTargetSource = new LazyInitTargetSource();
+		String[] beanNamesForType = BeanFactoryUtils.beanNamesForTypeIncludingAncestors(
+				applicationContext, interfaceName);
+		if (beanNamesForType.length == 0) {
+			return null;
+		}
+		Assert.isTrue(beanNamesForType.length == 1,
+				"Expecting to only find a single bean for type " + interfaceName
+						+ ", but found " + Arrays.asList(beanNamesForType));
+		lazyTargetSource.setTargetBeanName(beanNamesForType[0]);
+		lazyTargetSource.setBeanFactory(applicationContext);
+		ProxyFactoryBean proxyFactory = new ProxyFactoryBean();
+		proxyFactory = objectPostProcessor.postProcess(proxyFactory);
+		proxyFactory.setTargetSource(lazyTargetSource);
+		return (T) proxyFactory.getObject();
+	}
 
-        public EnableGlobalAuthenticationAutowiredConfigurer(ApplicationContext context) {
-            this.context = context;
-        }
+	private AuthenticationManager getAuthenticationManagerBean() {
+		return lazyBean(AuthenticationManager.class);
+	}
 
-        @Override
-        public void init(AuthenticationManagerBuilder auth) {
-            Map<String, Object> beansWithAnnotation = context.getBeansWithAnnotation(EnableGlobalAuthentication.class);
-            if(logger.isDebugEnabled()) {
-                logger.debug("Eagerly initializing " + beansWithAnnotation);
-            }
-        }
-    }
+	private static class EnableGlobalAuthenticationAutowiredConfigurer extends
+			GlobalAuthenticationConfigurerAdapter {
+		private final ApplicationContext context;
+		private static final Log logger = LogFactory
+				.getLog(EnableGlobalAuthenticationAutowiredConfigurer.class);
+
+		public EnableGlobalAuthenticationAutowiredConfigurer(ApplicationContext context) {
+			this.context = context;
+		}
+
+		@Override
+		public void init(AuthenticationManagerBuilder auth) {
+			Map<String, Object> beansWithAnnotation = context
+					.getBeansWithAnnotation(EnableGlobalAuthentication.class);
+			if (logger.isDebugEnabled()) {
+				logger.debug("Eagerly initializing " + beansWithAnnotation);
+			}
+		}
+	}
+
+	/**
+	 * Prevents infinite recursion in the event that initializing the
+	 * AuthenticationManager.
+	 *
+	 * @author Rob Winch
+	 * @since 4.1.1
+	 */
+	static final class AuthenticationManagerDelegator implements AuthenticationManager {
+		private AuthenticationManagerBuilder delegateBuilder;
+		private AuthenticationManager delegate;
+		private final Object delegateMonitor = new Object();
+
+		AuthenticationManagerDelegator(AuthenticationManagerBuilder delegateBuilder) {
+			Assert.notNull(delegateBuilder, "delegateBuilder cannot be null");
+			this.delegateBuilder = delegateBuilder;
+		}
+
+		@Override
+		public Authentication authenticate(Authentication authentication)
+				throws AuthenticationException {
+			if (this.delegate != null) {
+				return this.delegate.authenticate(authentication);
+			}
+
+			synchronized (this.delegateMonitor) {
+				if (this.delegate == null) {
+					this.delegate = this.delegateBuilder.getObject();
+					this.delegateBuilder = null;
+				}
+			}
+
+			return this.delegate.authenticate(authentication);
+		}
+
+		@Override
+		public String toString() {
+			return "AuthenticationManagerDelegator [delegate=" + this.delegate + "]";
+		}
+	}
 }

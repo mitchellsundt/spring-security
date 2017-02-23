@@ -1,10 +1,11 @@
-/* Copyright 2004, 2005, 2006 Acegi Technology Pty Limited
+/*
+ * Copyright 2004, 2005, 2006 Acegi Technology Pty Limited
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *      http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -18,9 +19,7 @@ package org.springframework.security.access.intercept;
 import java.util.Collection;
 
 import org.springframework.security.access.ConfigAttribute;
-import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContext;
-
 
 /**
  * A return object received by {@link AbstractSecurityInterceptor} subclasses.
@@ -32,38 +31,42 @@ import org.springframework.security.core.context.SecurityContext;
  * @author Ben Alex
  */
 public class InterceptorStatusToken {
-    //~ Instance fields ================================================================================================
+	// ~ Instance fields
+	// ================================================================================================
 
-    private SecurityContext securityContext;
-    private Collection<ConfigAttribute> attr;
-    private Object secureObject;
-    private boolean contextHolderRefreshRequired;
+	private SecurityContext securityContext;
+	private Collection<ConfigAttribute> attr;
+	private Object secureObject;
+	private boolean contextHolderRefreshRequired;
 
-    //~ Constructors ===================================================================================================
+	// ~ Constructors
+	// ===================================================================================================
 
-    public InterceptorStatusToken(SecurityContext securityContext, boolean contextHolderRefreshRequired,
-            Collection<ConfigAttribute> attributes, Object secureObject) {
-        this.securityContext = securityContext;
-        this.contextHolderRefreshRequired = contextHolderRefreshRequired;
-        this.attr = attributes;
-        this.secureObject = secureObject;
-    }
+	public InterceptorStatusToken(SecurityContext securityContext,
+			boolean contextHolderRefreshRequired, Collection<ConfigAttribute> attributes,
+			Object secureObject) {
+		this.securityContext = securityContext;
+		this.contextHolderRefreshRequired = contextHolderRefreshRequired;
+		this.attr = attributes;
+		this.secureObject = secureObject;
+	}
 
-    //~ Methods ========================================================================================================
+	// ~ Methods
+	// ========================================================================================================
 
-    public Collection<ConfigAttribute> getAttributes() {
-        return attr;
-    }
+	public Collection<ConfigAttribute> getAttributes() {
+		return attr;
+	}
 
-    public SecurityContext getSecurityContext() {
-        return securityContext;
-    }
+	public SecurityContext getSecurityContext() {
+		return securityContext;
+	}
 
-    public Object getSecureObject() {
-        return secureObject;
-    }
+	public Object getSecureObject() {
+		return secureObject;
+	}
 
-    public boolean isContextHolderRefreshRequired() {
-        return contextHolderRefreshRequired;
-    }
+	public boolean isContextHolderRefreshRequired() {
+		return contextHolderRefreshRequired;
+	}
 }

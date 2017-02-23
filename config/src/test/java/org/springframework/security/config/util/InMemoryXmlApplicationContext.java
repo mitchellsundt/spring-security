@@ -25,47 +25,53 @@ import org.springframework.security.util.InMemoryResource;
  * @author Luke Taylor
  */
 public class InMemoryXmlApplicationContext extends AbstractXmlApplicationContext {
-    private static final String BEANS_OPENING =
-                    "<b:beans xmlns='http://www.springframework.org/schema/security'\n" +
-                    "    xmlns:context='http://www.springframework.org/schema/context'\n" +
-                    "    xmlns:b='http://www.springframework.org/schema/beans'\n" +
-                    "    xmlns:aop='http://www.springframework.org/schema/aop'\n" +
-                    "    xmlns:xsi='http://www.w3.org/2001/XMLSchema-instance'\n" +
-                    "    xsi:schemaLocation='http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-2.5.xsd\n" +
-                    "http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop-2.5.xsd\n" +
-                    "http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-2.5.xsd\n" +
-                    "http://www.springframework.org/schema/security http://www.springframework.org/schema/security/spring-security-";
-    private static final String BEANS_CLOSE = "</b:beans>\n";
+	static final String BEANS_OPENING = "<b:beans xmlns='http://www.springframework.org/schema/security'\n"
+			+ "    xmlns:context='http://www.springframework.org/schema/context'\n"
+			+ "    xmlns:b='http://www.springframework.org/schema/beans'\n"
+			+ "    xmlns:aop='http://www.springframework.org/schema/aop'\n"
+			+ "    xmlns:mvc='http://www.springframework.org/schema/mvc'\n"
+			+ "    xmlns:websocket='http://www.springframework.org/schema/websocket'\n"
+			+ "    xmlns:xsi='http://www.w3.org/2001/XMLSchema-instance'\n"
+			+ "    xsi:schemaLocation='http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-2.5.xsd\n"
+			+ "http://www.springframework.org/schema/aop http://www.springframework.org/schema/aop/spring-aop-2.5.xsd\n"
+			+ "http://www.springframework.org/schema/mvc http://www.springframework.org/schema/mvc/spring-mvc.xsd\n"
+			+ "http://www.springframework.org/schema/websocket http://www.springframework.org/schema/websocket/spring-websocket.xsd\n"
+			+ "http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-2.5.xsd\n"
+			+ "http://www.springframework.org/schema/security http://www.springframework.org/schema/security/spring-security-";
+	static final String BEANS_CLOSE = "</b:beans>\n";
 
-    Resource inMemoryXml;
+	static final String SPRING_SECURITY_VERSION = "4.2";
 
-    public InMemoryXmlApplicationContext(String xml) {
-        this(xml, "3.2", null);
-    }
+	Resource inMemoryXml;
 
-    public InMemoryXmlApplicationContext(String xml, ApplicationContext parent) {
-        this(xml, "3.2", parent);
-    }
+	public InMemoryXmlApplicationContext(String xml) {
+		this(xml, SPRING_SECURITY_VERSION, null);
+	}
 
-    public InMemoryXmlApplicationContext(String xml, String secVersion, ApplicationContext parent) {
-        String fullXml = BEANS_OPENING + secVersion + ".xsd'>\n" + xml + BEANS_CLOSE;
-        inMemoryXml = new InMemoryResource(fullXml);
-        setAllowBeanDefinitionOverriding(true);
-        setParent(parent);
-        refresh();
-    }
+	public InMemoryXmlApplicationContext(String xml, ApplicationContext parent) {
+		this(xml, SPRING_SECURITY_VERSION, parent);
+	}
 
-    @Override
-    protected DefaultListableBeanFactory createBeanFactory() {
-        return new DefaultListableBeanFactory(getInternalParentBeanFactory()) {
-            @Override
-            protected boolean allowAliasOverriding() {
-                return true;
-            }
-        };
-    }
+	public InMemoryXmlApplicationContext(String xml, String secVersion,
+			ApplicationContext parent) {
+		String fullXml = BEANS_OPENING + secVersion + ".xsd'>\n" + xml + BEANS_CLOSE;
+		inMemoryXml = new InMemoryResource(fullXml);
+		setAllowBeanDefinitionOverriding(true);
+		setParent(parent);
+		refresh();
+	}
 
-    protected Resource[] getConfigResources() {
-        return new Resource[] {inMemoryXml};
-    }
+	@Override
+	protected DefaultListableBeanFactory createBeanFactory() {
+		return new DefaultListableBeanFactory(getInternalParentBeanFactory()) {
+			@Override
+			protected boolean allowAliasOverriding() {
+				return true;
+			}
+		};
+	}
+
+	protected Resource[] getConfigResources() {
+		return new Resource[] { inMemoryXml };
+	}
 }

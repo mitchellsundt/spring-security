@@ -1,10 +1,11 @@
-/* Copyright 2004, 2005, 2006 Acegi Technology Pty Limited
+/*
+ * Copyright 2004, 2005, 2006 Acegi Technology Pty Limited
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *      http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -33,34 +34,35 @@ import java.util.Iterator;
  * @author Ben Alex
  */
 public class DenyAgainVoter implements AccessDecisionVoter<Object> {
-    // ~ Methods
-    // ========================================================================================================
+	// ~ Methods
+	// ========================================================================================================
 
-    public boolean supports(ConfigAttribute attribute) {
-        if ("DENY_AGAIN_FOR_SURE".equals(attribute.getAttribute())) {
-            return true;
-        }
-        else {
-            return false;
-        }
-    }
+	public boolean supports(ConfigAttribute attribute) {
+		if ("DENY_AGAIN_FOR_SURE".equals(attribute.getAttribute())) {
+			return true;
+		}
+		else {
+			return false;
+		}
+	}
 
-    public boolean supports(Class<?> clazz) {
-        return true;
-    }
+	public boolean supports(Class<?> clazz) {
+		return true;
+	}
 
-    public int vote(Authentication authentication, Object object, Collection<ConfigAttribute> attributes) {
-        Iterator<ConfigAttribute> iter = attributes.iterator();
+	public int vote(Authentication authentication, Object object,
+			Collection<ConfigAttribute> attributes) {
+		Iterator<ConfigAttribute> iter = attributes.iterator();
 
-        while (iter.hasNext()) {
-            ConfigAttribute attribute = iter.next();
+		while (iter.hasNext()) {
+			ConfigAttribute attribute = iter.next();
 
-            if (this.supports(attribute)) {
-                return ACCESS_DENIED;
-            }
-        }
+			if (this.supports(attribute)) {
+				return ACCESS_DENIED;
+			}
+		}
 
-        return ACCESS_ABSTAIN;
-    }
+		return ACCESS_ABSTAIN;
+	}
 
 }

@@ -1,10 +1,11 @@
-/* Copyright 2004, 2005, 2006 Acegi Technology Pty Limited
+/*
+ * Copyright 2004, 2005, 2006 Acegi Technology Pty Limited
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *      http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -24,70 +25,74 @@ import javax.security.auth.callback.*;
 import javax.security.auth.login.LoginException;
 import javax.security.auth.spi.LoginModule;
 
-
 /**
  * @author Ray Krueger
  */
 public class TestLoginModule implements LoginModule {
-    //~ Instance fields ================================================================================================
+	// ~ Instance fields
+	// ================================================================================================
 
-    private String password;
-    private String user;
-    private Subject subject;
+	private String password;
+	private String user;
+	private Subject subject;
 
-    //~ Methods ========================================================================================================
+	// ~ Methods
+	// ========================================================================================================
 
-    public boolean abort() throws LoginException {
-        return true;
-    }
+	public boolean abort() throws LoginException {
+		return true;
+	}
 
-    public boolean commit() throws LoginException {
-        return true;
-    }
+	public boolean commit() throws LoginException {
+		return true;
+	}
 
-    @SuppressWarnings("unchecked")
-    public void initialize(Subject subject, CallbackHandler callbackHandler, Map sharedState, Map options) {
-        this.subject = subject;
+	@SuppressWarnings("unchecked")
+	public void initialize(Subject subject, CallbackHandler callbackHandler,
+			Map sharedState, Map options) {
+		this.subject = subject;
 
-        try {
-            TextInputCallback textCallback = new TextInputCallback("prompt");
-            NameCallback nameCallback = new NameCallback("prompt");
-            PasswordCallback passwordCallback = new PasswordCallback("prompt", false);
+		try {
+			TextInputCallback textCallback = new TextInputCallback("prompt");
+			NameCallback nameCallback = new NameCallback("prompt");
+			PasswordCallback passwordCallback = new PasswordCallback("prompt", false);
 
-            callbackHandler.handle(new Callback[] {textCallback, nameCallback, passwordCallback});
+			callbackHandler.handle(new Callback[] { textCallback, nameCallback,
+					passwordCallback });
 
-            password = new String(passwordCallback.getPassword());
-            user = nameCallback.getName();
-        } catch (Exception e) {
-            throw new RuntimeException(e);
-        }
-    }
+			password = new String(passwordCallback.getPassword());
+			user = nameCallback.getName();
+		}
+		catch (Exception e) {
+			throw new RuntimeException(e);
+		}
+	}
 
-    public boolean login() throws LoginException {
-        if (!user.equals("user")) {
-            throw new LoginException("Bad User");
-        }
+	public boolean login() throws LoginException {
+		if (!user.equals("user")) {
+			throw new LoginException("Bad User");
+		}
 
-        if (!password.equals("password")) {
-            throw new LoginException("Bad Password");
-        }
+		if (!password.equals("password")) {
+			throw new LoginException("Bad Password");
+		}
 
-        subject.getPrincipals().add(new Principal() {
-                public String getName() {
-                    return "TEST_PRINCIPAL";
-                }
-            });
+		subject.getPrincipals().add(new Principal() {
+			public String getName() {
+				return "TEST_PRINCIPAL";
+			}
+		});
 
-        subject.getPrincipals().add(new Principal() {
-                public String getName() {
-                    return "NULL_PRINCIPAL";
-                }
-            });
+		subject.getPrincipals().add(new Principal() {
+			public String getName() {
+				return "NULL_PRINCIPAL";
+			}
+		});
 
-        return true;
-    }
+		return true;
+	}
 
-    public boolean logout() throws LoginException {
-        return true;
-    }
+	public boolean logout() throws LoginException {
+		return true;
+	}
 }

@@ -1,3 +1,18 @@
+/*
+ * Copyright 2002-2016 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package org.springframework.security.config.method;
 
 import java.io.ByteArrayInputStream;
@@ -23,83 +38,86 @@ import org.springframework.security.core.context.SecurityContextHolder;
  * @author Ben Alex
  */
 public class SecuredAnnotationDrivenBeanDefinitionParserTests {
-    private InMemoryXmlApplicationContext appContext;
+	private InMemoryXmlApplicationContext appContext;
 
-    private BusinessService target;
+	private BusinessService target;
 
-    @Before
-    public void loadContext() {
-        SecurityContextHolder.clearContext();
-        appContext = new InMemoryXmlApplicationContext(
-                "<b:bean id='target' class='org.springframework.security.access.annotation.BusinessServiceImpl'/>" +
-                "<global-method-security secured-annotations='enabled'/>" + ConfigTestUtils.AUTH_PROVIDER_XML
-                );
-        target = (BusinessService) appContext.getBean("target");
-    }
+	@Before
+	public void loadContext() {
+		SecurityContextHolder.clearContext();
+		appContext = new InMemoryXmlApplicationContext(
+				"<b:bean id='target' class='org.springframework.security.access.annotation.BusinessServiceImpl'/>"
+						+ "<global-method-security secured-annotations='enabled'/>"
+						+ ConfigTestUtils.AUTH_PROVIDER_XML);
+		target = (BusinessService) appContext.getBean("target");
+	}
 
-    @After
-    public void closeAppContext() {
-        if (appContext != null) {
-            appContext.close();
-        }
-        SecurityContextHolder.clearContext();
-    }
+	@After
+	public void closeAppContext() {
+		if (appContext != null) {
+			appContext.close();
+		}
+		SecurityContextHolder.clearContext();
+	}
 
-    @Test(expected=AuthenticationCredentialsNotFoundException.class)
-    public void targetShouldPreventProtectedMethodInvocationWithNoContext() {
-        target.someUserMethod1();
-    }
+	@Test(expected = AuthenticationCredentialsNotFoundException.class)
+	public void targetShouldPreventProtectedMethodInvocationWithNoContext() {
+		target.someUserMethod1();
+	}
 
-    @Test
-    public void targetShouldAllowProtectedMethodInvocationWithCorrectRole() {
-        UsernamePasswordAuthenticationToken token = new UsernamePasswordAuthenticationToken("Test", "Password",
-                AuthorityUtils.createAuthorityList("ROLE_USER"));
-        SecurityContextHolder.getContext().setAuthentication(token);
+	@Test
+	public void targetShouldAllowProtectedMethodInvocationWithCorrectRole() {
+		UsernamePasswordAuthenticationToken token = new UsernamePasswordAuthenticationToken(
+				"Test", "Password", AuthorityUtils.createAuthorityList("ROLE_USER"));
+		SecurityContextHolder.getContext().setAuthentication(token);
 
-        target.someUserMethod1();
-    }
+		target.someUserMethod1();
+	}
 
-    @Test(expected=AccessDeniedException.class)
-    public void targetShouldPreventProtectedMethodInvocationWithIncorrectRole() {
-        UsernamePasswordAuthenticationToken token = new UsernamePasswordAuthenticationToken("Test", "Password",
-                AuthorityUtils.createAuthorityList("ROLE_SOMEOTHER"));
-        SecurityContextHolder.getContext().setAuthentication(token);
+	@Test(expected = AccessDeniedException.class)
+	public void targetShouldPreventProtectedMethodInvocationWithIncorrectRole() {
+		UsernamePasswordAuthenticationToken token = new UsernamePasswordAuthenticationToken(
+				"Test", "Password", AuthorityUtils.createAuthorityList("ROLE_SOMEOTHER"));
+		SecurityContextHolder.getContext().setAuthentication(token);
 
-        target.someAdminMethod();
-    }
+		target.someAdminMethod();
+	}
 
-    // SEC-1387
-    @Test(expected=AuthenticationCredentialsNotFoundException.class)
-    public void targetIsSerializableBeforeUse() throws Exception {
-        BusinessService chompedTarget = (BusinessService) serializeAndDeserialize(target);
-        chompedTarget.someAdminMethod();
-    }
+	// SEC-1387
+	@Test(expected = AuthenticationCredentialsNotFoundException.class)
+	public void targetIsSerializableBeforeUse() throws Exception {
+		BusinessService chompedTarget = (BusinessService) serializeAndDeserialize(target);
+		chompedTarget.someAdminMethod();
+	}
 
-    @Test(expected=AccessDeniedException.class)
-    public void targetIsSerializableAfterUse() throws Exception {
-        try {
-            target.someAdminMethod();
-        } catch (AuthenticationCredentialsNotFoundException expected) {
-        }
-        SecurityContextHolder.getContext().setAuthentication(new TestingAuthenticationToken("u","p","ROLE_A"));
+	@Test(expected = AccessDeniedException.class)
+	public void targetIsSerializableAfterUse() throws Exception {
+		try {
+			target.someAdminMethod();
+		}
+		catch (AuthenticationCredentialsNotFoundException expected) {
+		}
+		SecurityContextHolder.getContext().setAuthentication(
+				new TestingAuthenticationToken("u", "p", "ROLE_A"));
 
-        BusinessService chompedTarget = (BusinessService) serializeAndDeserialize(target);
-        chompedTarget.someAdminMethod();
-    }
+		BusinessService chompedTarget = (BusinessService) serializeAndDeserialize(target);
+		chompedTarget.someAdminMethod();
+	}
 
-    private Object serializeAndDeserialize(Object o) throws IOException, ClassNotFoundException {
-        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        ObjectOutputStream oos = new ObjectOutputStream(baos);
-        oos.writeObject(o);
-        oos.flush();
-        baos.flush();
-        byte[] bytes = baos.toByteArray();
+	private Object serializeAndDeserialize(Object o) throws IOException,
+			ClassNotFoundException {
+		ByteArrayOutputStream baos = new ByteArrayOutputStream();
+		ObjectOutputStream oos = new ObjectOutputStream(baos);
+		oos.writeObject(o);
+		oos.flush();
+		baos.flush();
+		byte[] bytes = baos.toByteArray();
 
-        ByteArrayInputStream is = new ByteArrayInputStream(bytes);
-        ObjectInputStream ois = new ObjectInputStream(is);
-        Object o2 = ois.readObject();
+		ByteArrayInputStream is = new ByteArrayInputStream(bytes);
+		ObjectInputStream ois = new ObjectInputStream(is);
+		Object o2 = ois.readObject();
 
-        return o2;
-    }
+		return o2;
+	}
 
 }

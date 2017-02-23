@@ -16,7 +16,7 @@
 
 package org.springframework.security.web.session;
 
-import static org.junit.Assert.*;
+import static org.assertj.core.api.Assertions.*;
 import static org.mockito.Mockito.*;
 
 import javax.servlet.http.HttpServletRequest;
@@ -38,114 +38,131 @@ import org.springframework.security.web.authentication.session.SessionFixationPr
  */
 public class DefaultSessionAuthenticationStrategyTests {
 
-    @Test
-    public void newSessionShouldNotBeCreatedIfNoSessionExistsAndAlwaysCreateIsFalse() throws Exception {
-        SessionFixationProtectionStrategy strategy = new SessionFixationProtectionStrategy();
-        HttpServletRequest request = new MockHttpServletRequest();
+	@Test
+	public void newSessionShouldNotBeCreatedIfNoSessionExistsAndAlwaysCreateIsFalse()
+			throws Exception {
+		SessionFixationProtectionStrategy strategy = new SessionFixationProtectionStrategy();
+		HttpServletRequest request = new MockHttpServletRequest();
 
-        strategy.onAuthentication(mock(Authentication.class), request, new MockHttpServletResponse());
+		strategy.onAuthentication(mock(Authentication.class), request,
+				new MockHttpServletResponse());
 
-        assertNull(request.getSession(false));
-    }
+		assertThat(request.getSession(false)).isNull();
+	}
 
-    @Test
-    public void newSessionIsCreatedIfSessionAlreadyExists() throws Exception {
-        SessionFixationProtectionStrategy strategy = new SessionFixationProtectionStrategy();
-        HttpServletRequest request = new MockHttpServletRequest();
-        String sessionId = request.getSession().getId();
+	@Test
+	public void newSessionIsCreatedIfSessionAlreadyExists() throws Exception {
+		SessionFixationProtectionStrategy strategy = new SessionFixationProtectionStrategy();
+		HttpServletRequest request = new MockHttpServletRequest();
+		String sessionId = request.getSession().getId();
 
-        strategy.onAuthentication(mock(Authentication.class), request, new MockHttpServletResponse());
+		strategy.onAuthentication(mock(Authentication.class), request,
+				new MockHttpServletResponse());
 
-        assertFalse(sessionId.equals(request.getSession().getId()));
-    }
+		assertThat(sessionId.equals(request.getSession().getId())).isFalse();
+	}
 
-    // SEC-2002
-    @Test
-    public void newSessionIsCreatedIfSessionAlreadyExistsWithEventPublisher() throws Exception {
-        SessionFixationProtectionStrategy strategy = new SessionFixationProtectionStrategy();
-        HttpServletRequest request = new MockHttpServletRequest();
-        HttpSession session = request.getSession();
-        session.setAttribute("blah", "blah");
-        session.setAttribute("SPRING_SECURITY_SAVED_REQUEST_KEY", "DefaultSavedRequest");
-        String oldSessionId = session.getId();
+	// SEC-2002
+	@Test
+	public void newSessionIsCreatedIfSessionAlreadyExistsWithEventPublisher()
+			throws Exception {
+		SessionFixationProtectionStrategy strategy = new SessionFixationProtectionStrategy();
+		HttpServletRequest request = new MockHttpServletRequest();
+		HttpSession session = request.getSession();
+		session.setAttribute("blah", "blah");
+		session.setAttribute("SPRING_SECURITY_SAVED_REQUEST_KEY", "DefaultSavedRequest");
+		String oldSessionId = session.getId();
 
-        ApplicationEventPublisher eventPublisher = mock(ApplicationEventPublisher.class);
-        strategy.setApplicationEventPublisher(eventPublisher);
+		ApplicationEventPublisher eventPublisher = mock(ApplicationEventPublisher.class);
+		strategy.setApplicationEventPublisher(eventPublisher);
 
-        Authentication mockAuthentication = mock(Authentication.class);
+		Authentication mockAuthentication = mock(Authentication.class);
 
-        strategy.onAuthentication(mockAuthentication, request, new MockHttpServletResponse());
+		strategy.onAuthentication(mockAuthentication, request,
+				new MockHttpServletResponse());
 
-        ArgumentCaptor<ApplicationEvent> eventArgumentCaptor = ArgumentCaptor.forClass(ApplicationEvent.class);
-        verify(eventPublisher).publishEvent(eventArgumentCaptor.capture());
+		ArgumentCaptor<ApplicationEvent> eventArgumentCaptor = ArgumentCaptor
+				.forClass(ApplicationEvent.class);
+		verify(eventPublisher).publishEvent(eventArgumentCaptor.capture());
 
-        assertFalse(oldSessionId.equals(request.getSession().getId()));
-        assertNotNull(request.getSession().getAttribute("blah"));
-        assertNotNull(request.getSession().getAttribute("SPRING_SECURITY_SAVED_REQUEST_KEY"));
+		assertThat(oldSessionId.equals(request.getSession().getId())).isFalse();
+		assertThat(request.getSession().getAttribute("blah")).isNotNull();
+		assertThat(request.getSession().getAttribute(
+				"SPRING_SECURITY_SAVED_REQUEST_KEY")).isNotNull();
 
-        assertNotNull(eventArgumentCaptor.getValue());
-        assertTrue(eventArgumentCaptor.getValue() instanceof SessionFixationProtectionEvent);
-        SessionFixationProtectionEvent event = (SessionFixationProtectionEvent)eventArgumentCaptor.getValue();
-        assertEquals(oldSessionId, event.getOldSessionId());
-        assertEquals(request.getSession().getId(), event.getNewSessionId());
-        assertSame(mockAuthentication, event.getAuthentication());
-    }
+		assertThat(eventArgumentCaptor.getValue()).isNotNull();
+		assertThat(eventArgumentCaptor.getValue() instanceof SessionFixationProtectionEvent).isTrue();
+		SessionFixationProtectionEvent event = (SessionFixationProtectionEvent) eventArgumentCaptor
+				.getValue();
+		assertThat(event.getOldSessionId()).isEqualTo(oldSessionId);
+		assertThat(event.getNewSessionId()).isEqualTo(request.getSession().getId());
+		assertThat(event.getAuthentication()).isSameAs(mockAuthentication);
+	}
 
-    // See SEC-1077
-    @Test
-    public void onlySavedRequestAttributeIsMigratedIfMigrateAttributesIsFalse() throws Exception {
-        SessionFixationProtectionStrategy strategy = new SessionFixationProtectionStrategy();
-        strategy.setMigrateSessionAttributes(false);
-        HttpServletRequest request = new MockHttpServletRequest();
-        HttpSession session = request.getSession();
-        session.setAttribute("blah", "blah");
-        session.setAttribute("SPRING_SECURITY_SAVED_REQUEST_KEY", "DefaultSavedRequest");
+	// See SEC-1077
+	@Test
+	public void onlySavedRequestAttributeIsMigratedIfMigrateAttributesIsFalse()
+			throws Exception {
+		SessionFixationProtectionStrategy strategy = new SessionFixationProtectionStrategy();
+		strategy.setMigrateSessionAttributes(false);
+		HttpServletRequest request = new MockHttpServletRequest();
+		HttpSession session = request.getSession();
+		session.setAttribute("blah", "blah");
+		session.setAttribute("SPRING_SECURITY_SAVED_REQUEST_KEY", "DefaultSavedRequest");
 
-        strategy.onAuthentication(mock(Authentication.class), request, new MockHttpServletResponse());
+		strategy.onAuthentication(mock(Authentication.class), request,
+				new MockHttpServletResponse());
 
-        assertNull(request.getSession().getAttribute("blah"));
-        assertNotNull(request.getSession().getAttribute("SPRING_SECURITY_SAVED_REQUEST_KEY"));
-    }
+		assertThat(request.getSession().getAttribute("blah")).isNull();
+		assertThat(request.getSession().getAttribute(
+				"SPRING_SECURITY_SAVED_REQUEST_KEY")).isNotNull();
+	}
 
-    // SEC-2002
-    @Test
-    public void onlySavedRequestAttributeIsMigratedIfMigrateAttributesIsFalseWithEventPublisher() throws Exception {
-        SessionFixationProtectionStrategy strategy = new SessionFixationProtectionStrategy();
-        strategy.setMigrateSessionAttributes(false);
-        HttpServletRequest request = new MockHttpServletRequest();
-        HttpSession session = request.getSession();
-        session.setAttribute("blah", "blah");
-        session.setAttribute("SPRING_SECURITY_SAVED_REQUEST_KEY", "DefaultSavedRequest");
-        String oldSessionId = session.getId();
+	// SEC-2002
+	@Test
+	public void onlySavedRequestAttributeIsMigratedIfMigrateAttributesIsFalseWithEventPublisher()
+			throws Exception {
+		SessionFixationProtectionStrategy strategy = new SessionFixationProtectionStrategy();
+		strategy.setMigrateSessionAttributes(false);
+		HttpServletRequest request = new MockHttpServletRequest();
+		HttpSession session = request.getSession();
+		session.setAttribute("blah", "blah");
+		session.setAttribute("SPRING_SECURITY_SAVED_REQUEST_KEY", "DefaultSavedRequest");
+		String oldSessionId = session.getId();
 
-        ApplicationEventPublisher eventPublisher = mock(ApplicationEventPublisher.class);
-        strategy.setApplicationEventPublisher(eventPublisher);
+		ApplicationEventPublisher eventPublisher = mock(ApplicationEventPublisher.class);
+		strategy.setApplicationEventPublisher(eventPublisher);
 
-        Authentication mockAuthentication = mock(Authentication.class);
+		Authentication mockAuthentication = mock(Authentication.class);
 
-        strategy.onAuthentication(mockAuthentication, request, new MockHttpServletResponse());
+		strategy.onAuthentication(mockAuthentication, request,
+				new MockHttpServletResponse());
 
-        ArgumentCaptor<ApplicationEvent> eventArgumentCaptor = ArgumentCaptor.forClass(ApplicationEvent.class);
-        verify(eventPublisher).publishEvent(eventArgumentCaptor.capture());
+		ArgumentCaptor<ApplicationEvent> eventArgumentCaptor = ArgumentCaptor
+				.forClass(ApplicationEvent.class);
+		verify(eventPublisher).publishEvent(eventArgumentCaptor.capture());
 
-        assertNull(request.getSession().getAttribute("blah"));
-        assertNotNull(request.getSession().getAttribute("SPRING_SECURITY_SAVED_REQUEST_KEY"));
+		assertThat(request.getSession().getAttribute("blah")).isNull();
+		assertThat(request.getSession().getAttribute(
+				"SPRING_SECURITY_SAVED_REQUEST_KEY")).isNotNull();
 
-        assertNotNull(eventArgumentCaptor.getValue());
-        assertTrue(eventArgumentCaptor.getValue() instanceof SessionFixationProtectionEvent);
-        SessionFixationProtectionEvent event = (SessionFixationProtectionEvent)eventArgumentCaptor.getValue();
-        assertEquals(oldSessionId, event.getOldSessionId());
-        assertEquals(request.getSession().getId(), event.getNewSessionId());
-        assertSame(mockAuthentication, event.getAuthentication());
-    }
+		assertThat(eventArgumentCaptor.getValue()).isNotNull();
+		assertThat(eventArgumentCaptor.getValue() instanceof SessionFixationProtectionEvent).isTrue();
+		SessionFixationProtectionEvent event = (SessionFixationProtectionEvent) eventArgumentCaptor
+				.getValue();
+		assertThat(event.getOldSessionId()).isEqualTo(oldSessionId);
+		assertThat(event.getNewSessionId()).isEqualTo(request.getSession().getId());
+		assertThat(event.getAuthentication()).isSameAs(mockAuthentication);
+	}
 
-    @Test
-    public void sessionIsCreatedIfAlwaysCreateTrue() throws Exception {
-        SessionFixationProtectionStrategy strategy = new SessionFixationProtectionStrategy();
-        strategy.setAlwaysCreateSession(true);
-        HttpServletRequest request = new MockHttpServletRequest();
-        strategy.onAuthentication(mock(Authentication.class), request, new MockHttpServletResponse());
-        assertNotNull(request.getSession(false));
-    }
+	@Test
+	public void sessionIsCreatedIfAlwaysCreateTrue() throws Exception {
+		SessionFixationProtectionStrategy strategy = new SessionFixationProtectionStrategy();
+		strategy.setAlwaysCreateSession(true);
+		HttpServletRequest request = new MockHttpServletRequest();
+		strategy.onAuthentication(mock(Authentication.class), request,
+				new MockHttpServletResponse());
+		assertThat(request.getSession(false)).isNotNull();
+	}
 
 }

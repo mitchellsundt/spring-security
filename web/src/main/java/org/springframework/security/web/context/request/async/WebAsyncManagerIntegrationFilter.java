@@ -1,14 +1,17 @@
 /*
- * Copyright 2002-2012 the original author or authors.
+ * Copyright 2002-2016 the original author or authors.
  *
- * Licensed under the Apache License, Version 2.0 (the "License"); you may not use this file except in compliance with
- * the License. You may obtain a copy of the License at
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
  *
- * http://www.apache.org/licenses/LICENSE-2.0
+ *      http://www.apache.org/licenses/LICENSE-2.0
  *
- * Unless required by applicable law or agreed to in writing, software distributed under the License is distributed on
- * an "AS IS" BASIS, WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied. See the License for the
- * specific language governing permissions and limitations under the License.
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
  */
 package org.springframework.security.web.context.request.async;
 
@@ -26,7 +29,8 @@ import org.springframework.web.context.request.async.WebAsyncUtils;
 import org.springframework.web.filter.OncePerRequestFilter;
 
 /**
- * Provides integration between the {@link SecurityContext} and Spring Web's {@link WebAsyncManager} by using the
+ * Provides integration between the {@link SecurityContext} and Spring Web's
+ * {@link WebAsyncManager} by using the
  * {@link SecurityContextCallableProcessingInterceptor#beforeConcurrentHandling(org.springframework.web.context.request.NativeWebRequest, Callable)}
  * to populate the {@link SecurityContext} on the {@link Callable}.
  *
@@ -34,19 +38,21 @@ import org.springframework.web.filter.OncePerRequestFilter;
  * @see SecurityContextCallableProcessingInterceptor
  */
 public final class WebAsyncManagerIntegrationFilter extends OncePerRequestFilter {
-    private static final Object CALLABLE_INTERCEPTOR_KEY = new Object();
+	private static final Object CALLABLE_INTERCEPTOR_KEY = new Object();
 
-    @Override
-    protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
-            throws ServletException, IOException {
-        WebAsyncManager asyncManager = WebAsyncUtils.getAsyncManager(request);
+	@Override
+	protected void doFilterInternal(HttpServletRequest request,
+			HttpServletResponse response, FilterChain filterChain)
+			throws ServletException, IOException {
+		WebAsyncManager asyncManager = WebAsyncUtils.getAsyncManager(request);
 
-        SecurityContextCallableProcessingInterceptor securityProcessingInterceptor = (SecurityContextCallableProcessingInterceptor) asyncManager.getCallableInterceptor(CALLABLE_INTERCEPTOR_KEY);
-        if (securityProcessingInterceptor == null) {
-            asyncManager.registerCallableInterceptor(CALLABLE_INTERCEPTOR_KEY,
-                    new SecurityContextCallableProcessingInterceptor());
-        }
+		SecurityContextCallableProcessingInterceptor securityProcessingInterceptor = (SecurityContextCallableProcessingInterceptor) asyncManager
+				.getCallableInterceptor(CALLABLE_INTERCEPTOR_KEY);
+		if (securityProcessingInterceptor == null) {
+			asyncManager.registerCallableInterceptor(CALLABLE_INTERCEPTOR_KEY,
+					new SecurityContextCallableProcessingInterceptor());
+		}
 
-        filterChain.doFilter(request, response);
-    }
+		filterChain.doFilter(request, response);
+	}
 }

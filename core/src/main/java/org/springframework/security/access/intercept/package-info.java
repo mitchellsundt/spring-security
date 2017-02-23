@@ -1,3 +1,18 @@
+/*
+ * Copyright 2002-2016 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 /**
  * Abstract level security interception classes which are responsible for enforcing the
  * configured security constraints for a secure object.
@@ -8,7 +23,7 @@
  * security facilities provided for it by Spring Security.
  * For example, one secure object would be <code>MethodInvocation</code>,
  * whilst another would be HTTP
- * {@link org.springframework.security.web.FilterInvocation}. Note these are
+ * {@code org.springframework.security.web.FilterInvocation}. Note these are
  * infrastructure objects and their design allows them to represent a large
  * variety of actual resources that might need to be secured, such as business
  * objects or HTTP request URLs.
@@ -19,3 +34,4 @@
  * for the type of resources the secure object represents.
  */
 package org.springframework.security.access.intercept;
+

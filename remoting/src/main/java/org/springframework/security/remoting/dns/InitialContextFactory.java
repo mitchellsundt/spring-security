@@ -1,5 +1,5 @@
 /*
- * Copyright 2009 the original author or authors.
+ * Copyright 2009-2016 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,7 +16,6 @@
 
 package org.springframework.security.remoting.dns;
 
-
 import javax.naming.directory.DirContext;
 import javax.naming.directory.InitialDirContext;
 
@@ -31,11 +30,10 @@ import javax.naming.directory.InitialDirContext;
  */
 public interface InitialContextFactory {
 
-
-    /**
-     * Must return a DirContext which can be used for DNS queries
-     * @return JNDI DirContext
-     */
-    public DirContext getCtx();
+	/**
+	 * Must return a DirContext which can be used for DNS queries
+	 * @return JNDI DirContext
+	 */
+	public DirContext getCtx();
 
 }

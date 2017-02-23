@@ -1,3 +1,18 @@
+/*
+ * Copyright 2002-2016 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package org.springframework.security.provisioning;
 
 import java.util.Collection;
@@ -21,103 +36,116 @@ import org.springframework.security.core.userdetails.memory.UserAttributeEditor;
 import org.springframework.util.Assert;
 
 /**
- * Non-persistent implementation of {@code UserDetailsManager} which is backed by an in-memory map.
+ * Non-persistent implementation of {@code UserDetailsManager} which is backed by an
+ * in-memory map.
  * <p>
- * Mainly intended for testing and demonstration purposes, where a full blown persistent system isn't required.
+ * Mainly intended for testing and demonstration purposes, where a full blown persistent
+ * system isn't required.
  *
  * @author Luke Taylor
  * @since 3.1
  */
 public class InMemoryUserDetailsManager implements UserDetailsManager {
-    protected final Log logger = LogFactory.getLog(getClass());
+	protected final Log logger = LogFactory.getLog(getClass());
 
-    private final Map<String, MutableUserDetails> users = new HashMap<String,MutableUserDetails>();
+	private final Map<String, MutableUserDetails> users = new HashMap<String, MutableUserDetails>();
 
-    private AuthenticationManager authenticationManager;
+	private AuthenticationManager authenticationManager;
 
-    public InMemoryUserDetailsManager(Collection<UserDetails> users) {
-        for (UserDetails user : users) {
-            createUser(user);
-        }
-    }
+	public InMemoryUserDetailsManager() {
+	}
 
-    public InMemoryUserDetailsManager(Properties users) {
-        Enumeration<?> names = users.propertyNames();
-        UserAttributeEditor editor = new UserAttributeEditor();
+	public InMemoryUserDetailsManager(Collection<UserDetails> users) {
+		for (UserDetails user : users) {
+			createUser(user);
+		}
+	}
 
-        while(names.hasMoreElements()) {
-            String name = (String) names.nextElement();
-            editor.setAsText(users.getProperty(name));
-            UserAttribute attr = (UserAttribute) editor.getValue();
-            UserDetails user = new User(name, attr.getPassword(), attr.isEnabled(), true, true, true,
-                    attr.getAuthorities());
-            createUser(user);
-        }
-    }
+	public InMemoryUserDetailsManager(Properties users) {
+		Enumeration<?> names = users.propertyNames();
+		UserAttributeEditor editor = new UserAttributeEditor();
 
-    public void createUser(UserDetails user) {
-        Assert.isTrue(!userExists(user.getUsername()));
+		while (names.hasMoreElements()) {
+			String name = (String) names.nextElement();
+			editor.setAsText(users.getProperty(name));
+			UserAttribute attr = (UserAttribute) editor.getValue();
+			UserDetails user = new User(name, attr.getPassword(), attr.isEnabled(), true,
+					true, true, attr.getAuthorities());
+			createUser(user);
+		}
+	}
 
-        users.put(user.getUsername().toLowerCase(), new MutableUser(user));
-    }
+	public void createUser(UserDetails user) {
+		Assert.isTrue(!userExists(user.getUsername()), "user should not exist");
 
-    public void deleteUser(String username) {
-        users.remove(username.toLowerCase());
-    }
+		users.put(user.getUsername().toLowerCase(), new MutableUser(user));
+	}
 
-    public void updateUser(UserDetails user) {
-        Assert.isTrue(userExists(user.getUsername()));
+	public void deleteUser(String username) {
+		users.remove(username.toLowerCase());
+	}
 
-        users.put(user.getUsername().toLowerCase(), new MutableUser(user));
-    }
+	public void updateUser(UserDetails user) {
+		Assert.isTrue(userExists(user.getUsername()), "user should exist");
 
-    public boolean userExists(String username) {
-        return users.containsKey(username.toLowerCase());
-    }
+		users.put(user.getUsername().toLowerCase(), new MutableUser(user));
+	}
 
-    public void changePassword(String oldPassword, String newPassword) {
-        Authentication currentUser = SecurityContextHolder.getContext().getAuthentication();
+	public boolean userExists(String username) {
+		return users.containsKey(username.toLowerCase());
+	}
 
-        if (currentUser == null) {
-            // This would indicate bad coding somewhere
-            throw new AccessDeniedException("Can't change password as no Authentication object found in context " +
-                    "for current user.");
-        }
+	public void changePassword(String oldPassword, String newPassword) {
+		Authentication currentUser = SecurityContextHolder.getContext()
+				.getAuthentication();
 
-        String username = currentUser.getName();
+		if (currentUser == null) {
+			// This would indicate bad coding somewhere
+			throw new AccessDeniedException(
+					"Can't change password as no Authentication object found in context "
+							+ "for current user.");
+		}
 
-        logger.debug("Changing password for user '"+ username + "'");
+		String username = currentUser.getName();
 
-        // If an authentication manager has been set, re-authenticate the user with the supplied password.
-        if (authenticationManager != null) {
-            logger.debug("Reauthenticating user '"+ username + "' for password change request.");
+		logger.debug("Changing password for user '" + username + "'");
 
-            authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(username, oldPassword));
-        } else {
-            logger.debug("No authentication manager set. Password won't be re-checked.");
-        }
+		// If an authentication manager has been set, re-authenticate the user with the
+		// supplied password.
+		if (authenticationManager != null) {
+			logger.debug("Reauthenticating user '" + username
+					+ "' for password change request.");
 
-        MutableUserDetails user = users.get(username);
+			authenticationManager.authenticate(new UsernamePasswordAuthenticationToken(
+					username, oldPassword));
+		}
+		else {
+			logger.debug("No authentication manager set. Password won't be re-checked.");
+		}
 
-        if (user == null) {
-            throw new IllegalStateException("Current user doesn't exist in database.");
-        }
+		MutableUserDetails user = users.get(username);
 
-        user.setPassword(newPassword);
-    }
+		if (user == null) {
+			throw new IllegalStateException("Current user doesn't exist in database.");
+		}
 
-    public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
-        UserDetails user = users.get(username.toLowerCase());
+		user.setPassword(newPassword);
+	}
 
-        if (user == null) {
-            throw new UsernameNotFoundException(username);
-        }
+	public UserDetails loadUserByUsername(String username)
+			throws UsernameNotFoundException {
+		UserDetails user = users.get(username.toLowerCase());
 
-        return new User(user.getUsername(), user.getPassword(), user.isEnabled(), user.isAccountNonExpired(),
-                user.isCredentialsNonExpired(), user.isAccountNonLocked(), user.getAuthorities());
-    }
+		if (user == null) {
+			throw new UsernameNotFoundException(username);
+		}
 
-    public void setAuthenticationManager(AuthenticationManager authenticationManager) {
-        this.authenticationManager = authenticationManager;
-    }
+		return new User(user.getUsername(), user.getPassword(), user.isEnabled(),
+				user.isAccountNonExpired(), user.isCredentialsNonExpired(),
+				user.isAccountNonLocked(), user.getAuthorities());
+	}
+
+	public void setAuthenticationManager(AuthenticationManager authenticationManager) {
+		this.authenticationManager = authenticationManager;
+	}
 }

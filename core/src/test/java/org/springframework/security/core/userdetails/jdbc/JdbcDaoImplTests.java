@@ -1,10 +1,11 @@
-/* Copyright 2004, 2005, 2006 Acegi Technology Pty Limited
+/*
+ * Copyright 2004, 2005, 2006 Acegi Technology Pty Limited
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *      http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -15,150 +16,202 @@
 
 package org.springframework.security.core.userdetails.jdbc;
 
-import junit.framework.TestCase;
+import java.util.Locale;
 
+import org.junit.Test;
+
+import org.springframework.context.MessageSource;
 import org.springframework.security.PopulatedDatabase;
 import org.springframework.security.core.authority.AuthorityUtils;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.fail;
+import static org.mockito.Matchers.any;
+import static org.mockito.Matchers.eq;
+import static org.mockito.Mockito.mock;
+import static org.mockito.Mockito.verify;
 
 /**
  * Tests {@link JdbcDaoImpl}.
  *
  * @author Ben Alex
+ * @author Eddú Meléndez
  */
-public class JdbcDaoImplTests extends TestCase {
+public class JdbcDaoImplTests {
 
-    //~ Methods ========================================================================================================
+	// ~ Methods
+	// ========================================================================================================
 
-    private JdbcDaoImpl makePopulatedJdbcDao() throws Exception {
-        JdbcDaoImpl dao = new JdbcDaoImpl();
-        dao.setDataSource(PopulatedDatabase.getDataSource());
-        dao.afterPropertiesSet();
+	private JdbcDaoImpl makePopulatedJdbcDao() throws Exception {
+		JdbcDaoImpl dao = new JdbcDaoImpl();
+		dao.setDataSource(PopulatedDatabase.getDataSource());
+		dao.afterPropertiesSet();
 
-        return dao;
-    }
+		return dao;
+	}
 
-    private JdbcDaoImpl makePopulatedJdbcDaoWithRolePrefix() throws Exception {
-        JdbcDaoImpl dao = new JdbcDaoImpl();
-        dao.setDataSource(PopulatedDatabase.getDataSource());
-        dao.setRolePrefix("ARBITRARY_PREFIX_");
-        dao.afterPropertiesSet();
+	private JdbcDaoImpl makePopulatedJdbcDaoWithRolePrefix() throws Exception {
+		JdbcDaoImpl dao = new JdbcDaoImpl();
+		dao.setDataSource(PopulatedDatabase.getDataSource());
+		dao.setRolePrefix("ARBITRARY_PREFIX_");
+		dao.afterPropertiesSet();
 
-        return dao;
-    }
+		return dao;
+	}
 
-    public void testCheckDaoAccessUserSuccess() throws Exception {
-        JdbcDaoImpl dao = makePopulatedJdbcDao();
-        UserDetails user = dao.loadUserByUsername("rod");
-        assertEquals("rod", user.getUsername());
-        assertEquals("koala", user.getPassword());
-        assertTrue(user.isEnabled());
+	@Test
+	public void testCheckDaoAccessUserSuccess() throws Exception {
+		JdbcDaoImpl dao = makePopulatedJdbcDao();
+		UserDetails user = dao.loadUserByUsername("rod");
+		assertThat(user.getUsername()).isEqualTo("rod");
+		assertThat(user.getPassword()).isEqualTo("koala");
+		assertThat(user.isEnabled()).isTrue();
 
-        assertTrue(AuthorityUtils.authorityListToSet(user.getAuthorities()).contains("ROLE_TELLER"));
-        assertTrue(AuthorityUtils.authorityListToSet(user.getAuthorities()).contains("ROLE_SUPERVISOR"));
-    }
+		assertThat(AuthorityUtils.authorityListToSet(user.getAuthorities()))
+				.contains("ROLE_TELLER");
+		assertThat(AuthorityUtils.authorityListToSet(user.getAuthorities()))
+				.contains("ROLE_SUPERVISOR");
+	}
 
-    public void testCheckDaoOnlyReturnsGrantedAuthoritiesGrantedToUser() throws Exception {
-        JdbcDaoImpl dao = makePopulatedJdbcDao();
-        UserDetails user = dao.loadUserByUsername("scott");
-        assertEquals(1, user.getAuthorities().size());
-        assertTrue(AuthorityUtils.authorityListToSet(user.getAuthorities()).contains("ROLE_TELLER"));
-    }
+	@Test
+	public void testCheckDaoOnlyReturnsGrantedAuthoritiesGrantedToUser()
+			throws Exception {
+		JdbcDaoImpl dao = makePopulatedJdbcDao();
+		UserDetails user = dao.loadUserByUsername("scott");
+		assertThat(user.getAuthorities()).hasSize(1);
+		assertThat(AuthorityUtils.authorityListToSet(user.getAuthorities()))
+				.contains("ROLE_TELLER");
+	}
 
-    public void testCheckDaoReturnsCorrectDisabledProperty() throws Exception {
-        JdbcDaoImpl dao = makePopulatedJdbcDao();
-        UserDetails user = dao.loadUserByUsername("peter");
-        assertTrue(!user.isEnabled());
-    }
+	@Test
+	public void testCheckDaoReturnsCorrectDisabledProperty() throws Exception {
+		JdbcDaoImpl dao = makePopulatedJdbcDao();
+		UserDetails user = dao.loadUserByUsername("peter");
+		assertThat(user.isEnabled()).isFalse();
+	}
 
-    public void testGettersSetters() {
-        JdbcDaoImpl dao = new JdbcDaoImpl();
-        dao.setAuthoritiesByUsernameQuery("SELECT * FROM FOO");
-        assertEquals("SELECT * FROM FOO", dao.getAuthoritiesByUsernameQuery());
+	@Test
+	public void testGettersSetters() {
+		JdbcDaoImpl dao = new JdbcDaoImpl();
+		dao.setAuthoritiesByUsernameQuery("SELECT * FROM FOO");
+		assertThat(dao.getAuthoritiesByUsernameQuery()).isEqualTo("SELECT * FROM FOO");
 
-        dao.setUsersByUsernameQuery("SELECT USERS FROM FOO");
-        assertEquals("SELECT USERS FROM FOO", dao.getUsersByUsernameQuery());
-    }
+		dao.setUsersByUsernameQuery("SELECT USERS FROM FOO");
+		assertThat(dao.getUsersByUsernameQuery()).isEqualTo("SELECT USERS FROM FOO");
+	}
 
-    public void testLookupFailsIfUserHasNoGrantedAuthorities() throws Exception {
-        JdbcDaoImpl dao = makePopulatedJdbcDao();
+	@Test
+	public void testLookupFailsIfUserHasNoGrantedAuthorities() throws Exception {
+		JdbcDaoImpl dao = makePopulatedJdbcDao();
 
-        try {
-            dao.loadUserByUsername("cooper");
-            fail("Should have thrown UsernameNotFoundException");
-        } catch (UsernameNotFoundException expected) {
-        }
-    }
+		try {
+			dao.loadUserByUsername("cooper");
+			fail("Should have thrown UsernameNotFoundException");
+		}
+		catch (UsernameNotFoundException expected) {
+		}
+	}
 
-    public void testLookupFailsWithWrongUsername() throws Exception {
-        JdbcDaoImpl dao = makePopulatedJdbcDao();
+	@Test
+	public void testLookupFailsWithWrongUsername() throws Exception {
+		JdbcDaoImpl dao = makePopulatedJdbcDao();
 
-        try {
-            dao.loadUserByUsername("UNKNOWN_USER");
-            fail("Should have thrown UsernameNotFoundException");
-        } catch (UsernameNotFoundException expected) {
-            assertTrue(true);
-        }
-    }
+		try {
+			dao.loadUserByUsername("UNKNOWN_USER");
+			fail("Should have thrown UsernameNotFoundException");
+		}
+		catch (UsernameNotFoundException expected) {
 
-    public void testLookupSuccessWithMixedCase() throws Exception {
-        JdbcDaoImpl dao = makePopulatedJdbcDao();
-        assertEquals("koala", dao.loadUserByUsername("rod").getPassword());
-        assertEquals("wombat", dao.loadUserByUsername("ScOTt").getPassword());
-    }
+		}
+	}
 
-    public void testRolePrefixWorks() throws Exception {
-        JdbcDaoImpl dao = makePopulatedJdbcDaoWithRolePrefix();
-        assertEquals("ARBITRARY_PREFIX_", dao.getRolePrefix());
+	@Test
+	public void testLookupSuccessWithMixedCase() throws Exception {
+		JdbcDaoImpl dao = makePopulatedJdbcDao();
+		assertThat(dao.loadUserByUsername("rod").getPassword()).isEqualTo("koala");
+		assertThat(dao.loadUserByUsername("ScOTt").getPassword()).isEqualTo("wombat");
+	}
 
-        UserDetails user = dao.loadUserByUsername("rod");
-        assertEquals("rod", user.getUsername());
-        assertEquals(2, user.getAuthorities().size());
+	@Test
+	public void testRolePrefixWorks() throws Exception {
+		JdbcDaoImpl dao = makePopulatedJdbcDaoWithRolePrefix();
+		assertThat(dao.getRolePrefix()).isEqualTo("ARBITRARY_PREFIX_");
 
-        assertTrue(AuthorityUtils.authorityListToSet(user.getAuthorities()).contains("ARBITRARY_PREFIX_ROLE_TELLER"));
-        assertTrue(AuthorityUtils.authorityListToSet(user.getAuthorities()).contains("ARBITRARY_PREFIX_ROLE_SUPERVISOR"));
-    }
+		UserDetails user = dao.loadUserByUsername("rod");
+		assertThat(user.getUsername()).isEqualTo("rod");
+		assertThat(user.getAuthorities()).hasSize(2);
 
-    public void testGroupAuthoritiesAreLoadedCorrectly() throws Exception {
-        JdbcDaoImpl dao = makePopulatedJdbcDao();
-        dao.setEnableAuthorities(false);
-        dao.setEnableGroups(true);
+		assertThat(AuthorityUtils.authorityListToSet(user.getAuthorities()))
+				.contains("ARBITRARY_PREFIX_ROLE_TELLER");
+		assertThat(AuthorityUtils.authorityListToSet(user.getAuthorities()))
+				.contains("ARBITRARY_PREFIX_ROLE_SUPERVISOR");
+	}
 
-        UserDetails jerry = dao.loadUserByUsername("jerry");
-        assertEquals(3, jerry.getAuthorities().size());
-    }
+	@Test
+	public void testGroupAuthoritiesAreLoadedCorrectly() throws Exception {
+		JdbcDaoImpl dao = makePopulatedJdbcDao();
+		dao.setEnableAuthorities(false);
+		dao.setEnableGroups(true);
 
-    public void testDuplicateGroupAuthoritiesAreRemoved() throws Exception {
-        JdbcDaoImpl dao = makePopulatedJdbcDao();
-        dao.setEnableAuthorities(false);
-        dao.setEnableGroups(true);
-        // Tom has roles A, B, C and B, C duplicates
-        UserDetails tom = dao.loadUserByUsername("tom");
-        assertEquals(3, tom.getAuthorities().size());
-    }
+		UserDetails jerry = dao.loadUserByUsername("jerry");
+		assertThat(jerry.getAuthorities()).hasSize(3);
+	}
 
-    public void testStartupFailsIfDataSourceNotSet() throws Exception {
-        JdbcDaoImpl dao = new JdbcDaoImpl();
+	@Test
+	public void testDuplicateGroupAuthoritiesAreRemoved() throws Exception {
+		JdbcDaoImpl dao = makePopulatedJdbcDao();
+		dao.setEnableAuthorities(false);
+		dao.setEnableGroups(true);
+		// Tom has roles A, B, C and B, C duplicates
+		UserDetails tom = dao.loadUserByUsername("tom");
+		assertThat(tom.getAuthorities()).hasSize(3);
+	}
 
-        try {
-            dao.afterPropertiesSet();
-            fail("Should have thrown IllegalArgumentException");
-        } catch (IllegalArgumentException expected) {
-            assertTrue(true);
-        }
-    }
+	@Test
+	public void testStartupFailsIfDataSourceNotSet() throws Exception {
+		JdbcDaoImpl dao = new JdbcDaoImpl();
 
-    public void testStartupFailsIfUserMapSetToNull() throws Exception {
-        JdbcDaoImpl dao = new JdbcDaoImpl();
+		try {
+			dao.afterPropertiesSet();
+			fail("Should have thrown IllegalArgumentException");
+		}
+		catch (IllegalArgumentException expected) {
 
-        try {
-            dao.setDataSource(null);
-            dao.afterPropertiesSet();
-            fail("Should have thrown IllegalArgumentException");
-        } catch (IllegalArgumentException expected) {
-            assertTrue(true);
-        }
-    }
+		}
+	}
+
+	@Test
+	public void testStartupFailsIfUserMapSetToNull() throws Exception {
+		JdbcDaoImpl dao = new JdbcDaoImpl();
+
+		try {
+			dao.setDataSource(null);
+			dao.afterPropertiesSet();
+			fail("Should have thrown IllegalArgumentException");
+		}
+		catch (IllegalArgumentException expected) {
+
+		}
+	}
+
+	@Test(expected = IllegalArgumentException.class)
+	public void setMessageSourceWhenNullThenThrowsException() throws Exception {
+		JdbcDaoImpl dao = new JdbcDaoImpl();
+
+		dao.setMessageSource(null);
+	}
+
+	@Test
+	public void setMessageSourceWhenNotNullThenCanGet() throws Exception {
+		MessageSource source = mock(MessageSource.class);
+		JdbcDaoImpl dao = new JdbcDaoImpl();
+		dao.setMessageSource(source);
+		String code = "code";
+
+		dao.getMessages().getMessage(code);
+
+		verify(source).getMessage(eq(code), any(Object[].class), any(Locale.class));
+	}
 }

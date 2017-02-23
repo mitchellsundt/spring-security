@@ -1,5 +1,5 @@
 /*
- * Copyright 2009 the original author or authors.
+ * Copyright 2009-2016 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,34 +15,33 @@
  */
 package org.springframework.security.web.util.matcher;
 
-
 import javax.servlet.http.HttpServletRequest;
 
 import org.springframework.util.StringUtils;
 
 class ELRequestMatcherContext {
 
-    private final HttpServletRequest request;
+	private final HttpServletRequest request;
 
-    public ELRequestMatcherContext(HttpServletRequest request) {
-        this.request = request;
-    }
+	public ELRequestMatcherContext(HttpServletRequest request) {
+		this.request = request;
+	}
 
-    public boolean hasIpAddress(String ipAddress) {
-        return (new IpAddressMatcher(ipAddress).matches(request));
-    }
+	public boolean hasIpAddress(String ipAddress) {
+		return (new IpAddressMatcher(ipAddress).matches(request));
+	}
 
-    public boolean hasHeader(String headerName, String value) {
-        String header = request.getHeader(headerName);
-        if (!StringUtils.hasText(header)) {
-            return false;
-        }
+	public boolean hasHeader(String headerName, String value) {
+		String header = request.getHeader(headerName);
+		if (!StringUtils.hasText(header)) {
+			return false;
+		}
 
-        if (header.contains(value)) {
-            return true;
-        }
+		if (header.contains(value)) {
+			return true;
+		}
 
-        return false;
-    }
+		return false;
+	}
 
 }

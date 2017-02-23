@@ -1,5 +1,5 @@
 /*
- * Copyright 2010 the original author or authors.
+ * Copyright 2010-2016 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,7 +15,7 @@
  */
 package org.springframework.security.web.util.matcher;
 
-import static org.junit.Assert.*;
+import static org.assertj.core.api.Assertions.*;
 
 import org.junit.Test;
 import org.springframework.mock.web.MockHttpServletRequest;
@@ -27,64 +27,67 @@ import org.springframework.security.web.util.matcher.ELRequestMatcher;
  */
 public class ELRequestMatcherTests {
 
-    @Test
-    public void testHasIpAddressTrue() throws Exception {
-        ELRequestMatcher requestMatcher = new ELRequestMatcher("hasIpAddress('1.1.1.1')");
-        MockHttpServletRequest request = new MockHttpServletRequest();
-        request.setRemoteAddr("1.1.1.1");
+	@Test
+	public void testHasIpAddressTrue() throws Exception {
+		ELRequestMatcher requestMatcher = new ELRequestMatcher("hasIpAddress('1.1.1.1')");
+		MockHttpServletRequest request = new MockHttpServletRequest();
+		request.setRemoteAddr("1.1.1.1");
 
-        assertTrue(requestMatcher.matches(request));
-    }
+		assertThat(requestMatcher.matches(request)).isTrue();
+	}
 
-    @Test
-    public void testHasIpAddressFalse() throws Exception {
-        ELRequestMatcher requestMatcher = new ELRequestMatcher("hasIpAddress('1.1.1.1')");
-        MockHttpServletRequest request = new MockHttpServletRequest();
-        request.setRemoteAddr("1.1.1.2");
+	@Test
+	public void testHasIpAddressFalse() throws Exception {
+		ELRequestMatcher requestMatcher = new ELRequestMatcher("hasIpAddress('1.1.1.1')");
+		MockHttpServletRequest request = new MockHttpServletRequest();
+		request.setRemoteAddr("1.1.1.2");
 
-        assertFalse(requestMatcher.matches(request));
-    }
+		assertThat(requestMatcher.matches(request)).isFalse();
+	}
 
-    @Test
-    public void testHasHeaderTrue() throws Exception {
-        ELRequestMatcher requestMatcher = new ELRequestMatcher("hasHeader('User-Agent','MSIE')");
-        MockHttpServletRequest request = new MockHttpServletRequest();
-        request.addHeader("User-Agent", "MSIE");
+	@Test
+	public void testHasHeaderTrue() throws Exception {
+		ELRequestMatcher requestMatcher = new ELRequestMatcher(
+				"hasHeader('User-Agent','MSIE')");
+		MockHttpServletRequest request = new MockHttpServletRequest();
+		request.addHeader("User-Agent", "MSIE");
 
-        assertTrue(requestMatcher.matches(request));
-    }
+		assertThat(requestMatcher.matches(request)).isTrue();
+	}
 
-    @Test
-    public void testHasHeaderTwoEntries() throws Exception {
-        ELRequestMatcher requestMatcher = new ELRequestMatcher(
-                "hasHeader('User-Agent','MSIE') or hasHeader('User-Agent','Mozilla')");
-        MockHttpServletRequest request = new MockHttpServletRequest();
-        request.addHeader("User-Agent", "MSIE");
+	@Test
+	public void testHasHeaderTwoEntries() throws Exception {
+		ELRequestMatcher requestMatcher = new ELRequestMatcher(
+				"hasHeader('User-Agent','MSIE') or hasHeader('User-Agent','Mozilla')");
+		MockHttpServletRequest request = new MockHttpServletRequest();
+		request.addHeader("User-Agent", "MSIE");
 
-        assertTrue(requestMatcher.matches(request));
+		assertThat(requestMatcher.matches(request)).isTrue();
 
-        request = new MockHttpServletRequest();
-        request.addHeader("User-Agent", "Mozilla");
+		request = new MockHttpServletRequest();
+		request.addHeader("User-Agent", "Mozilla");
 
-        assertTrue(requestMatcher.matches(request));
+		assertThat(requestMatcher.matches(request)).isTrue();
 
-    }
+	}
 
-    @Test
-    public void testHasHeaderFalse() throws Exception {
-        ELRequestMatcher requestMatcher = new ELRequestMatcher("hasHeader('User-Agent','MSIE')");
-        MockHttpServletRequest request = new MockHttpServletRequest();
-        request.addHeader("User-Agent", "wrong");
+	@Test
+	public void testHasHeaderFalse() throws Exception {
+		ELRequestMatcher requestMatcher = new ELRequestMatcher(
+				"hasHeader('User-Agent','MSIE')");
+		MockHttpServletRequest request = new MockHttpServletRequest();
+		request.addHeader("User-Agent", "wrong");
 
-        assertFalse(requestMatcher.matches(request));
-    }
+		assertThat(requestMatcher.matches(request)).isFalse();
+	}
 
-    @Test
-    public void testHasHeaderNull() throws Exception {
-        ELRequestMatcher requestMatcher = new ELRequestMatcher("hasHeader('User-Agent','MSIE')");
-        MockHttpServletRequest request = new MockHttpServletRequest();
+	@Test
+	public void testHasHeaderNull() throws Exception {
+		ELRequestMatcher requestMatcher = new ELRequestMatcher(
+				"hasHeader('User-Agent','MSIE')");
+		MockHttpServletRequest request = new MockHttpServletRequest();
 
-        assertFalse(requestMatcher.matches(request));
-    }
+		assertThat(requestMatcher.matches(request)).isFalse();
+	}
 
 }

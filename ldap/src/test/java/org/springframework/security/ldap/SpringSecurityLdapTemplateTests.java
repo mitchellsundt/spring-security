@@ -15,8 +15,7 @@
  */
 package org.springframework.security.ldap;
 
-import static org.fest.assertions.Assertions.assertThat;
-import static org.mockito.Matchers.*;
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.*;
 
 import javax.naming.NamingEnumeration;
@@ -36,33 +35,36 @@ import org.springframework.ldap.core.DistinguishedName;
 @RunWith(MockitoJUnitRunner.class)
 public class SpringSecurityLdapTemplateTests {
 
-    @Mock
-    private DirContext ctx;
-    @Captor
-    private ArgumentCaptor<SearchControls> searchControls;
-    @Mock
-    private NamingEnumeration<SearchResult> resultsEnum;
-    @Mock
-    private SearchResult searchResult;
+	@Mock
+	private DirContext ctx;
+	@Captor
+	private ArgumentCaptor<SearchControls> searchControls;
+	@Mock
+	private NamingEnumeration<SearchResult> resultsEnum;
+	@Mock
+	private SearchResult searchResult;
 
-    // SEC-2405
-    @Test
-    public void searchForSingleEntryInternalAllowsReferrals() throws Exception {
-        String base = "";
-        String filter = "";
-        String searchResultName = "ldap://example.com/dc=springframework,dc=org";
-        Object[] params = new Object[] {};
-        DirContextAdapter searchResultObject = mock(DirContextAdapter.class);
+	// SEC-2405
+	@Test
+	public void searchForSingleEntryInternalAllowsReferrals() throws Exception {
+		String base = "";
+		String filter = "";
+		String searchResultName = "ldap://example.com/dc=springframework,dc=org";
+		Object[] params = new Object[] {};
+		DirContextAdapter searchResultObject = mock(DirContextAdapter.class);
 
-        when(ctx.search(any(DistinguishedName.class), eq(filter), eq(params), searchControls.capture())).thenReturn(resultsEnum);
-        when(resultsEnum.hasMore()).thenReturn(true, false);
-        when(resultsEnum.next()).thenReturn(searchResult);
-        when(searchResult.getName()).thenReturn(searchResultName);
-        when(searchResult.getObject()).thenReturn(searchResultObject);
+		when(
+				ctx.search(any(DistinguishedName.class), eq(filter), eq(params),
+						searchControls.capture())).thenReturn(resultsEnum);
+		when(resultsEnum.hasMore()).thenReturn(true, false);
+		when(resultsEnum.next()).thenReturn(searchResult);
+		when(searchResult.getName()).thenReturn(searchResultName);
+		when(searchResult.getObject()).thenReturn(searchResultObject);
 
-        SpringSecurityLdapTemplate.searchForSingleEntryInternal(ctx, mock(SearchControls.class), base, filter, params);
+		SpringSecurityLdapTemplate.searchForSingleEntryInternal(ctx,
+				mock(SearchControls.class), base, filter, params);
 
-        assertThat(searchControls.getValue().getReturningObjFlag()).isTrue();
-    }
+		assertThat(searchControls.getValue().getReturningObjFlag()).isTrue();
+	}
 
 }

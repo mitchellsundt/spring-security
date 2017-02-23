@@ -1079,7 +1079,7 @@
             <xs:documentation>Controls the eagerness with which an HTTP session is created by Spring Security classes.
                 If not set, defaults to "ifRequired". If "stateless" is used, this implies that the
                 application guarantees that it will not create a session. This differs from the use of
-                "never" which mans that Spring Security will not create a session, but will make use of
+                "never" which means that Spring Security will not create a session, but will make use of
                 one if the application does.
                 </xs:documentation>
          </xs:annotation>
@@ -1280,7 +1280,7 @@
       <xs:attribute name="logout-url" type="xs:token">
          <xs:annotation>
             <xs:documentation>Specifies the URL that will cause a logout. Spring Security will initialize a filter that
-                responds to this particular URL. Defaults to /j_spring_security_logout if unspecified.
+                responds to this particular URL. Defaults to /logout if unspecified.
                 </xs:documentation>
          </xs:annotation>
       </xs:attribute>
@@ -1326,20 +1326,19 @@
   <xs:attributeGroup name="form-login.attlist">
       <xs:attribute name="login-processing-url" type="xs:token">
          <xs:annotation>
-            <xs:documentation>The URL that the login form is posted to. If unspecified, it defaults to
-                /j_spring_security_check.
+            <xs:documentation>The URL that the login form is posted to. If unspecified, it defaults to /login.
                 </xs:documentation>
          </xs:annotation>
       </xs:attribute>
       <xs:attribute name="username-parameter" type="xs:token">
          <xs:annotation>
-            <xs:documentation>The name of the request parameter which contains the username. Defaults to 'j_username'.
+            <xs:documentation>The name of the request parameter which contains the username. Defaults to 'username'.
                 </xs:documentation>
          </xs:annotation>
       </xs:attribute>
       <xs:attribute name="password-parameter" type="xs:token">
          <xs:annotation>
-            <xs:documentation>The name of the request parameter which contains the password. Defaults to 'j_password'.
+            <xs:documentation>The name of the request parameter which contains the password. Defaults to 'password'.
                 </xs:documentation>
          </xs:annotation>
       </xs:attribute>
@@ -2084,8 +2083,8 @@
       </xs:attribute>
       <xs:attribute name="erase-credentials" type="xs:boolean">
          <xs:annotation>
-            <xs:documentation>If set to true, the AuthenticationManger will attempt to clear any credentials data in the
-                returned Authentication object, once the user has been authenticated.
+            <xs:documentation>If set to true, the AuthenticationManager will attempt to clear any credentials data in
+                the returned Authentication object, once the user has been authenticated.
                 </xs:documentation>
          </xs:annotation>
       </xs:attribute>
@@ -2366,7 +2365,7 @@
       </xs:attribute>
       <xs:attribute name="value" type="xs:string">
          <xs:annotation>
-            <xs:documentation>Specify the a value to use for the chosen strategy.
+            <xs:documentation>Specify a value to use for the chosen strategy.
                 </xs:documentation>
          </xs:annotation>
       </xs:attribute>

@@ -1,10 +1,11 @@
-/* Copyright 2004, 2005, 2006 Acegi Technology Pty Limited
+/*
+ * Copyright 2004, 2005, 2006 Acegi Technology Pty Limited
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *      http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -29,237 +30,256 @@ import org.springframework.security.core.authority.AuthorityUtils;
 import org.springframework.security.ldap.ppolicy.PasswordPolicyData;
 import org.springframework.util.Assert;
 
-
 /**
- * A UserDetails implementation which is used internally by the Ldap services. It also contains the user's
- * distinguished name and a set of attributes that have been retrieved from the Ldap server.
+ * A UserDetails implementation which is used internally by the Ldap services. It also
+ * contains the user's distinguished name and a set of attributes that have been retrieved
+ * from the Ldap server.
  * <p>
- * An instance may be created as the result of a search, or when user information is retrieved during authentication.
+ * An instance may be created as the result of a search, or when user information is
+ * retrieved during authentication.
  * <p>
- * An instance of this class will be used by the <tt>LdapAuthenticationProvider</tt> to construct the final user details
- * object that it returns.
+ * An instance of this class will be used by the <tt>LdapAuthenticationProvider</tt> to
+ * construct the final user details object that it returns.
  * <p>
- * The {@code equals} and {@code hashcode} methods are implemented using the {@code Dn} property and do not consider
- * additional state, so it is not possible two store two instances with the same DN in the same set, or use them as
- * keys in a map.
+ * The {@code equals} and {@code hashcode} methods are implemented using the {@code Dn}
+ * property and do not consider additional state, so it is not possible two store two
+ * instances with the same DN in the same set, or use them as keys in a map.
  *
  * @author Luke Taylor
  */
 public class LdapUserDetailsImpl implements LdapUserDetails, PasswordPolicyData {
 
-    private static final long serialVersionUID = SpringSecurityCoreVersion.SERIAL_VERSION_UID;
+	private static final long serialVersionUID = SpringSecurityCoreVersion.SERIAL_VERSION_UID;
 
-    //~ Instance fields ================================================================================================
+	// ~ Instance fields
+	// ================================================================================================
 
-    private String dn;
-    private String password;
-    private String username;
-    private Collection<GrantedAuthority> authorities = AuthorityUtils.NO_AUTHORITIES;
-    private boolean accountNonExpired = true;
-    private boolean accountNonLocked = true;
-    private boolean credentialsNonExpired = true;
-    private boolean enabled = true;
-    // PPolicy data
-    private int timeBeforeExpiration = Integer.MAX_VALUE;
-    private int graceLoginsRemaining = Integer.MAX_VALUE;
+	private String dn;
+	private String password;
+	private String username;
+	private Collection<GrantedAuthority> authorities = AuthorityUtils.NO_AUTHORITIES;
+	private boolean accountNonExpired = true;
+	private boolean accountNonLocked = true;
+	private boolean credentialsNonExpired = true;
+	private boolean enabled = true;
+	// PPolicy data
+	private int timeBeforeExpiration = Integer.MAX_VALUE;
+	private int graceLoginsRemaining = Integer.MAX_VALUE;
 
-    //~ Constructors ===================================================================================================
+	// ~ Constructors
+	// ===================================================================================================
 
-    protected LdapUserDetailsImpl() {}
+	protected LdapUserDetailsImpl() {
+	}
 
-    //~ Methods ========================================================================================================
+	// ~ Methods
+	// ========================================================================================================
 
-    public Collection<GrantedAuthority> getAuthorities() {
-        return authorities;
-    }
+	public Collection<GrantedAuthority> getAuthorities() {
+		return authorities;
+	}
 
-    public String getDn() {
-        return dn;
-    }
+	public String getDn() {
+		return dn;
+	}
 
-    public String getPassword() {
-        return password;
-    }
+	public String getPassword() {
+		return password;
+	}
 
-    public String getUsername() {
-        return username;
-    }
+	public String getUsername() {
+		return username;
+	}
 
-    public boolean isAccountNonExpired() {
-        return accountNonExpired;
-    }
+	public boolean isAccountNonExpired() {
+		return accountNonExpired;
+	}
 
-    public boolean isAccountNonLocked() {
-        return accountNonLocked;
-    }
+	public boolean isAccountNonLocked() {
+		return accountNonLocked;
+	}
 
-    public boolean isCredentialsNonExpired() {
-        return credentialsNonExpired;
-    }
+	public boolean isCredentialsNonExpired() {
+		return credentialsNonExpired;
+	}
 
-    public boolean isEnabled() {
-        return enabled;
-    }
+	public boolean isEnabled() {
+		return enabled;
+	}
 
-    public int getTimeBeforeExpiration() {
-        return timeBeforeExpiration;
-    }
+	@Override
+	public void eraseCredentials() {
+		password = null;
+	}
 
-    public int getGraceLoginsRemaining() {
-        return graceLoginsRemaining;
-    }
+	public int getTimeBeforeExpiration() {
+		return timeBeforeExpiration;
+	}
 
-    @Override
-    public boolean equals(Object obj) {
-        if (obj instanceof LdapUserDetailsImpl) {
-            return dn.equals(((LdapUserDetailsImpl)obj).dn);
-        }
-        return false;
-    }
+	public int getGraceLoginsRemaining() {
+		return graceLoginsRemaining;
+	}
 
-    @Override
-    public int hashCode() {
-        return dn.hashCode();
-    }
+	@Override
+	public boolean equals(Object obj) {
+		if (obj instanceof LdapUserDetailsImpl) {
+			return dn.equals(((LdapUserDetailsImpl) obj).dn);
+		}
+		return false;
+	}
 
-    public String toString() {
-        StringBuilder sb = new StringBuilder();
-        sb.append(super.toString()).append(": ");
-        sb.append("Dn: ").append(dn).append("; ");
-        sb.append("Username: ").append(this.username).append("; ");
-        sb.append("Password: [PROTECTED]; ");
-        sb.append("Enabled: ").append(this.enabled).append("; ");
-        sb.append("AccountNonExpired: ").append(this.accountNonExpired).append("; ");
-        sb.append("CredentialsNonExpired: ").append(this.credentialsNonExpired).append("; ");
-        sb.append("AccountNonLocked: ").append(this.accountNonLocked).append("; ");
+	@Override
+	public int hashCode() {
+		return dn.hashCode();
+	}
 
-        if (this.getAuthorities() != null && !this.getAuthorities().isEmpty()) {
-            sb.append("Granted Authorities: ");
-            boolean first = true;
+	public String toString() {
+		StringBuilder sb = new StringBuilder();
+		sb.append(super.toString()).append(": ");
+		sb.append("Dn: ").append(dn).append("; ");
+		sb.append("Username: ").append(this.username).append("; ");
+		sb.append("Password: [PROTECTED]; ");
+		sb.append("Enabled: ").append(this.enabled).append("; ");
+		sb.append("AccountNonExpired: ").append(this.accountNonExpired).append("; ");
+		sb.append("CredentialsNonExpired: ").append(this.credentialsNonExpired)
+				.append("; ");
+		sb.append("AccountNonLocked: ").append(this.accountNonLocked).append("; ");
 
-            for (Object authority : this.getAuthorities()) {
-                if (first) {
-                    first = false;
-                } else {
-                    sb.append(", ");
-                }
+		if (this.getAuthorities() != null && !this.getAuthorities().isEmpty()) {
+			sb.append("Granted Authorities: ");
+			boolean first = true;
 
-                sb.append(authority.toString());
-            }
-        } else {
-            sb.append("Not granted any authorities");
-        }
+			for (Object authority : this.getAuthorities()) {
+				if (first) {
+					first = false;
+				}
+				else {
+					sb.append(", ");
+				}
 
-        return sb.toString();
-    }
+				sb.append(authority.toString());
+			}
+		}
+		else {
+			sb.append("Not granted any authorities");
+		}
 
-    //~ Inner Classes ==================================================================================================
+		return sb.toString();
+	}
 
-    /**
-     * Variation of essence pattern. Used to create mutable intermediate object
-     */
-    public static class Essence {
-        protected LdapUserDetailsImpl instance = createTarget();
-        private List<GrantedAuthority> mutableAuthorities = new ArrayList<GrantedAuthority>();
+	// ~ Inner Classes
+	// ==================================================================================================
 
-        public Essence() { }
+	/**
+	 * Variation of essence pattern. Used to create mutable intermediate object
+	 */
+	public static class Essence {
+		protected LdapUserDetailsImpl instance = createTarget();
+		private List<GrantedAuthority> mutableAuthorities = new ArrayList<GrantedAuthority>();
 
-        public Essence(DirContextOperations ctx) {
-            setDn(ctx.getDn());
-        }
+		public Essence() {
+		}
 
-        public Essence(LdapUserDetails copyMe) {
-            setDn(copyMe.getDn());
-            setUsername(copyMe.getUsername());
-            setPassword(copyMe.getPassword());
-            setEnabled(copyMe.isEnabled());
-            setAccountNonExpired(copyMe.isAccountNonExpired());
-            setCredentialsNonExpired(copyMe.isCredentialsNonExpired());
-            setAccountNonLocked(copyMe.isAccountNonLocked());
-            setAuthorities(copyMe.getAuthorities());
-        }
+		public Essence(DirContextOperations ctx) {
+			setDn(ctx.getDn());
+		}
 
-        protected LdapUserDetailsImpl createTarget() {
-            return new LdapUserDetailsImpl();
-        }
+		public Essence(LdapUserDetails copyMe) {
+			setDn(copyMe.getDn());
+			setUsername(copyMe.getUsername());
+			setPassword(copyMe.getPassword());
+			setEnabled(copyMe.isEnabled());
+			setAccountNonExpired(copyMe.isAccountNonExpired());
+			setCredentialsNonExpired(copyMe.isCredentialsNonExpired());
+			setAccountNonLocked(copyMe.isAccountNonLocked());
+			setAuthorities(copyMe.getAuthorities());
+		}
 
-        /** Adds the authority to the list, unless it is already there, in which case it is ignored */
-        public void addAuthority(GrantedAuthority a) {
-            if(!hasAuthority(a)) {
-                mutableAuthorities.add(a);
-            }
-        }
+		protected LdapUserDetailsImpl createTarget() {
+			return new LdapUserDetailsImpl();
+		}
 
-        private boolean hasAuthority(GrantedAuthority a) {
-            for (GrantedAuthority authority : mutableAuthorities) {
-                if(authority.equals(a)) {
-                    return true;
-                }
-            }
-            return false;
-        }
+		/**
+		 * Adds the authority to the list, unless it is already there, in which case it is
+		 * ignored
+		 */
+		public void addAuthority(GrantedAuthority a) {
+			if (!hasAuthority(a)) {
+				mutableAuthorities.add(a);
+			}
+		}
 
-        public LdapUserDetails createUserDetails() {
-            Assert.notNull(instance, "Essence can only be used to create a single instance");
-            Assert.notNull(instance.username, "username must not be null");
-            Assert.notNull(instance.getDn(), "Distinguished name must not be null");
+		private boolean hasAuthority(GrantedAuthority a) {
+			for (GrantedAuthority authority : mutableAuthorities) {
+				if (authority.equals(a)) {
+					return true;
+				}
+			}
+			return false;
+		}
 
-            instance.authorities = Collections.unmodifiableList(mutableAuthorities);
+		public LdapUserDetails createUserDetails() {
+			Assert.notNull(instance,
+					"Essence can only be used to create a single instance");
+			Assert.notNull(instance.username, "username must not be null");
+			Assert.notNull(instance.getDn(), "Distinguished name must not be null");
 
-            LdapUserDetails newInstance = instance;
+			instance.authorities = Collections.unmodifiableList(mutableAuthorities);
 
-            instance = null;
+			LdapUserDetails newInstance = instance;
 
-            return newInstance;
-        }
+			instance = null;
 
-        public Collection<GrantedAuthority> getGrantedAuthorities() {
-            return mutableAuthorities;
-        }
+			return newInstance;
+		}
 
-        public void setAccountNonExpired(boolean accountNonExpired) {
-            instance.accountNonExpired = accountNonExpired;
-        }
+		public Collection<GrantedAuthority> getGrantedAuthorities() {
+			return mutableAuthorities;
+		}
 
-        public void setAccountNonLocked(boolean accountNonLocked) {
-            instance.accountNonLocked = accountNonLocked;
-        }
+		public void setAccountNonExpired(boolean accountNonExpired) {
+			instance.accountNonExpired = accountNonExpired;
+		}
 
-        public void setAuthorities(Collection<? extends GrantedAuthority> authorities) {
-            mutableAuthorities = new ArrayList<GrantedAuthority>();
-            mutableAuthorities.addAll(authorities);
-        }
+		public void setAccountNonLocked(boolean accountNonLocked) {
+			instance.accountNonLocked = accountNonLocked;
+		}
 
-        public void setCredentialsNonExpired(boolean credentialsNonExpired) {
-            instance.credentialsNonExpired = credentialsNonExpired;
-        }
+		public void setAuthorities(Collection<? extends GrantedAuthority> authorities) {
+			mutableAuthorities = new ArrayList<GrantedAuthority>();
+			mutableAuthorities.addAll(authorities);
+		}
 
-        public void setDn(String dn) {
-            instance.dn = dn;
-        }
+		public void setCredentialsNonExpired(boolean credentialsNonExpired) {
+			instance.credentialsNonExpired = credentialsNonExpired;
+		}
 
-        public void setDn(Name dn) {
-            instance.dn = dn.toString();
-        }
+		public void setDn(String dn) {
+			instance.dn = dn;
+		}
 
-        public void setEnabled(boolean enabled) {
-            instance.enabled = enabled;
-        }
+		public void setDn(Name dn) {
+			instance.dn = dn.toString();
+		}
 
-        public void setPassword(String password) {
-            instance.password = password;
-        }
+		public void setEnabled(boolean enabled) {
+			instance.enabled = enabled;
+		}
 
-        public void setUsername(String username) {
-            instance.username = username;
-        }
+		public void setPassword(String password) {
+			instance.password = password;
+		}
 
-        public void setTimeBeforeExpiration(int timeBeforeExpiration) {
-            instance.timeBeforeExpiration = timeBeforeExpiration;
-        }
+		public void setUsername(String username) {
+			instance.username = username;
+		}
 
-        public void setGraceLoginsRemaining(int graceLoginsRemaining) {
-            instance.graceLoginsRemaining = graceLoginsRemaining;
-        }
-    }
+		public void setTimeBeforeExpiration(int timeBeforeExpiration) {
+			instance.timeBeforeExpiration = timeBeforeExpiration;
+		}
+
+		public void setGraceLoginsRemaining(int graceLoginsRemaining) {
+			instance.graceLoginsRemaining = graceLoginsRemaining;
+		}
+	}
 }

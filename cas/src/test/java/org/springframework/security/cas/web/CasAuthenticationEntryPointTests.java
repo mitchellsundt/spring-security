@@ -1,10 +1,11 @@
-/* Copyright 2004, 2005, 2006 Acegi Technology Pty Limited
+/*
+ * Copyright 2004, 2005, 2006 Acegi Technology Pty Limited
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *      http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -15,97 +16,106 @@
 
 package org.springframework.security.cas.web;
 
-import junit.framework.TestCase;
-
-import org.springframework.mock.web.MockHttpServletRequest;
-import org.springframework.mock.web.MockHttpServletResponse;
-import org.springframework.security.cas.ServiceProperties;
-import org.springframework.security.cas.web.CasAuthenticationEntryPoint;
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.fail;
 
 import java.net.URLEncoder;
 
+import org.junit.Test;
+import org.springframework.mock.web.MockHttpServletRequest;
+import org.springframework.mock.web.MockHttpServletResponse;
+import org.springframework.security.cas.ServiceProperties;
 
 /**
  * Tests {@link CasAuthenticationEntryPoint}.
  *
  * @author Ben Alex
  */
-public class CasAuthenticationEntryPointTests extends TestCase {
-    //~ Methods ========================================================================================================
+public class CasAuthenticationEntryPointTests {
 
-    public void testDetectsMissingLoginFormUrl() throws Exception {
-        CasAuthenticationEntryPoint ep = new CasAuthenticationEntryPoint();
-        ep.setServiceProperties(new ServiceProperties());
+	// ~ Methods
+	// ========================================================================================================
+	@Test
+	public void testDetectsMissingLoginFormUrl() throws Exception {
+		CasAuthenticationEntryPoint ep = new CasAuthenticationEntryPoint();
+		ep.setServiceProperties(new ServiceProperties());
 
-        try {
-            ep.afterPropertiesSet();
-            fail("Should have thrown IllegalArgumentException");
-        } catch (IllegalArgumentException expected) {
-            assertEquals("loginUrl must be specified", expected.getMessage());
-        }
-    }
+		try {
+			ep.afterPropertiesSet();
+			fail("Should have thrown IllegalArgumentException");
+		}
+		catch (IllegalArgumentException expected) {
+			assertThat(expected.getMessage()).isEqualTo("loginUrl must be specified");
+		}
+	}
 
-    public void testDetectsMissingServiceProperties() throws Exception {
-        CasAuthenticationEntryPoint ep = new CasAuthenticationEntryPoint();
-        ep.setLoginUrl("https://cas/login");
+	@Test
+	public void testDetectsMissingServiceProperties() throws Exception {
+		CasAuthenticationEntryPoint ep = new CasAuthenticationEntryPoint();
+		ep.setLoginUrl("https://cas/login");
 
-        try {
-            ep.afterPropertiesSet();
-            fail("Should have thrown IllegalArgumentException");
-        } catch (IllegalArgumentException expected) {
-            assertEquals("serviceProperties must be specified", expected.getMessage());
-        }
-    }
+		try {
+			ep.afterPropertiesSet();
+			fail("Should have thrown IllegalArgumentException");
+		}
+		catch (IllegalArgumentException expected) {
+			assertThat(expected.getMessage()).isEqualTo(
+					"serviceProperties must be specified");
+		}
+	}
 
-    public void testGettersSetters() {
-        CasAuthenticationEntryPoint ep = new CasAuthenticationEntryPoint();
-        ep.setLoginUrl("https://cas/login");
-        assertEquals("https://cas/login", ep.getLoginUrl());
+	@Test
+	public void testGettersSetters() {
+		CasAuthenticationEntryPoint ep = new CasAuthenticationEntryPoint();
+		ep.setLoginUrl("https://cas/login");
+		assertThat(ep.getLoginUrl()).isEqualTo("https://cas/login");
 
-        ep.setServiceProperties(new ServiceProperties());
-        assertTrue(ep.getServiceProperties() != null);
-    }
+		ep.setServiceProperties(new ServiceProperties());
+		assertThat(ep.getServiceProperties() != null).isTrue();
+	}
 
-    public void testNormalOperationWithRenewFalse() throws Exception {
-        ServiceProperties sp = new ServiceProperties();
-        sp.setSendRenew(false);
-        sp.setService("https://mycompany.com/bigWebApp/j_spring_cas_security_check");
+	@Test
+	public void testNormalOperationWithRenewFalse() throws Exception {
+		ServiceProperties sp = new ServiceProperties();
+		sp.setSendRenew(false);
+		sp.setService("https://mycompany.com/bigWebApp/login/cas");
 
-        CasAuthenticationEntryPoint ep = new CasAuthenticationEntryPoint();
-        ep.setLoginUrl("https://cas/login");
-        ep.setServiceProperties(sp);
+		CasAuthenticationEntryPoint ep = new CasAuthenticationEntryPoint();
+		ep.setLoginUrl("https://cas/login");
+		ep.setServiceProperties(sp);
 
-        MockHttpServletRequest request = new MockHttpServletRequest();
-        request.setRequestURI("/some_path");
+		MockHttpServletRequest request = new MockHttpServletRequest();
+		request.setRequestURI("/some_path");
 
-        MockHttpServletResponse response = new MockHttpServletResponse();
+		MockHttpServletResponse response = new MockHttpServletResponse();
 
-        ep.afterPropertiesSet();
-        ep.commence(request, response, null);
+		ep.afterPropertiesSet();
+		ep.commence(request, response, null);
 
-        assertEquals("https://cas/login?service="
-            + URLEncoder.encode("https://mycompany.com/bigWebApp/j_spring_cas_security_check", "UTF-8"),
-            response.getRedirectedUrl());
-    }
+		assertThat("https://cas/login?service=" + URLEncoder.encode(
+				"https://mycompany.com/bigWebApp/login/cas", "UTF-8")).isEqualTo(
+						response.getRedirectedUrl());
+	}
 
-    public void testNormalOperationWithRenewTrue() throws Exception {
-        ServiceProperties sp = new ServiceProperties();
-        sp.setSendRenew(true);
-        sp.setService("https://mycompany.com/bigWebApp/j_spring_cas_security_check");
+	@Test
+	public void testNormalOperationWithRenewTrue() throws Exception {
+		ServiceProperties sp = new ServiceProperties();
+		sp.setSendRenew(true);
+		sp.setService("https://mycompany.com/bigWebApp/login/cas");
 
-        CasAuthenticationEntryPoint ep = new CasAuthenticationEntryPoint();
-        ep.setLoginUrl("https://cas/login");
-        ep.setServiceProperties(sp);
+		CasAuthenticationEntryPoint ep = new CasAuthenticationEntryPoint();
+		ep.setLoginUrl("https://cas/login");
+		ep.setServiceProperties(sp);
 
-        MockHttpServletRequest request = new MockHttpServletRequest();
-        request.setRequestURI("/some_path");
+		MockHttpServletRequest request = new MockHttpServletRequest();
+		request.setRequestURI("/some_path");
 
-        MockHttpServletResponse response = new MockHttpServletResponse();
+		MockHttpServletResponse response = new MockHttpServletResponse();
 
-        ep.afterPropertiesSet();
-        ep.commence(request, response, null);
-        assertEquals("https://cas/login?service="
-            + URLEncoder.encode("https://mycompany.com/bigWebApp/j_spring_cas_security_check", "UTF-8") + "&renew=true",
-            response.getRedirectedUrl());
-    }
+		ep.afterPropertiesSet();
+		ep.commence(request, response, null);
+		assertThat("https://cas/login?service="
+				+ URLEncoder.encode("https://mycompany.com/bigWebApp/login/cas", "UTF-8")
+				+ "&renew=true").isEqualTo(response.getRedirectedUrl());
+	}
 }

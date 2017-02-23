@@ -1,5 +1,5 @@
 /*
- * Copyright 2010 the original author or authors.
+ * Copyright 2010-2016 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,28 +25,28 @@ import org.springframework.util.Assert;
 
 /**
  * <p>
- * Creates a LoginContext using the Configuration provided to it. This allows
- * the configuration to be injected regardless of the value of
+ * Creates a LoginContext using the Configuration provided to it. This allows the
+ * configuration to be injected regardless of the value of
  * {@link Configuration#getConfiguration()}.
  * </p>
  * <p>
- * While not bound to any particular Configuration implementation, an in memory version of a JAAS
- * configuration can be represented using {@link InMemoryConfiguration}.
+ * While not bound to any particular Configuration implementation, an in memory version of
+ * a JAAS configuration can be represented using {@link InMemoryConfiguration}.
  * </p>
  * <p>
  * The following JAAS configuration:
  * </p>
- * 
+ *
  * <pre>
  * SPRINGSECURITY {
  *    sample.SampleLoginModule required;
  *  };
  * </pre>
- * 
+ *
  * <p>
  * Can be represented as follows:
  * </p>
- * 
+ *
  * <pre>
  * &lt;bean id=&quot;jaasAuthProvider&quot; class=&quot;org.springframework.security.authentication.jaas.DefaultJaasAuthenticationProvider&quot;&gt;
  *   &lt;property name=&quot;configuration&quot;&gt;
@@ -79,45 +79,48 @@ import org.springframework.util.Assert;
  *   &lt;/property&gt;
  * &lt;/bean&gt;
  * </pre>
- * 
+ *
  * @author Rob Winch
  * @see AbstractJaasAuthenticationProvider
  * @see InMemoryConfiguration
  */
-public class DefaultJaasAuthenticationProvider extends AbstractJaasAuthenticationProvider {
-    //~ Instance fields ================================================================================================
+public class DefaultJaasAuthenticationProvider
+		extends AbstractJaasAuthenticationProvider {
+	// ~ Instance fields
+	// ================================================================================================
 
-    private Configuration configuration;
+	private Configuration configuration;
 
-    //~ Methods ========================================================================================================
+	// ~ Methods
+	// ========================================================================================================
 
-    @Override
-    public void afterPropertiesSet() throws Exception {
-        super.afterPropertiesSet();
-        Assert.notNull(configuration, "configuration cannot be null.");
-    }
+	@Override
+	public void afterPropertiesSet() throws Exception {
+		super.afterPropertiesSet();
+		Assert.notNull(this.configuration, "configuration cannot be null.");
+	}
 
-    /**
-     * Creates a LoginContext using the Configuration that was specified in
-     * {@link #setConfiguration(Configuration)}.
-     */
-    @Override
-    protected LoginContext createLoginContext(CallbackHandler handler) throws LoginException {
-        return new LoginContext(getLoginContextName(), null, handler, getConfiguration());
-    }
+	/**
+	 * Creates a LoginContext using the Configuration that was specified in
+	 * {@link #setConfiguration(Configuration)}.
+	 */
+	@Override
+	protected LoginContext createLoginContext(CallbackHandler handler)
+			throws LoginException {
+		return new LoginContext(getLoginContextName(), null, handler, getConfiguration());
+	}
 
-    protected Configuration getConfiguration() {
-        return configuration;
-    }
+	protected Configuration getConfiguration() {
+		return this.configuration;
+	}
 
-    /**
-     * Sets the Configuration to use for Authentication. 
-     * 
-     * @param configuration
-     *            the Configuration that is used when
-     *            {@link #createLoginContext(CallbackHandler)} is called.
-     */
-    public void setConfiguration(Configuration configuration) {
-        this.configuration = configuration;
-    }
+	/**
+	 * Sets the Configuration to use for Authentication.
+	 *
+	 * @param configuration the Configuration that is used when
+	 * {@link #createLoginContext(CallbackHandler)} is called.
+	 */
+	public void setConfiguration(Configuration configuration) {
+		this.configuration = configuration;
+	}
 }

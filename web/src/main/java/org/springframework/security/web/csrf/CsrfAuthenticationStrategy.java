@@ -31,31 +31,40 @@ import org.springframework.util.Assert;
  * @author Rob Winch
  * @since 3.2
  */
-public final class CsrfAuthenticationStrategy implements
-        SessionAuthenticationStrategy {
+public final class CsrfAuthenticationStrategy implements SessionAuthenticationStrategy {
 
-    private final CsrfTokenRepository csrfTokenRepository;
+	private final CsrfTokenRepository csrfTokenRepository;
 
-    /**
-     * Creates a new instance
-     * @param csrfTokenRepository the {@link CsrfTokenRepository} to use
-     */
-    public CsrfAuthenticationStrategy(CsrfTokenRepository csrfTokenRepository) {
-        Assert.notNull(csrfTokenRepository,"csrfTokenRepository cannot be null");
-        this.csrfTokenRepository = csrfTokenRepository;
-    }
+	/**
+	 * Creates a new instance
+	 * @param csrfTokenRepository the {@link CsrfTokenRepository} to use
+	 */
+	public CsrfAuthenticationStrategy(CsrfTokenRepository csrfTokenRepository) {
+		Assert.notNull(csrfTokenRepository, "csrfTokenRepository cannot be null");
+		this.csrfTokenRepository = csrfTokenRepository;
+	}
 
-    /* (non-Javadoc)
-     * @see org.springframework.security.web.authentication.session.SessionAuthenticationStrategy#onAuthentication(org.springframework.security.core.Authentication, javax.servlet.http.HttpServletRequest, javax.servlet.http.HttpServletResponse)
-     */
-    public void onAuthentication(Authentication authentication,
-            HttpServletRequest request, HttpServletResponse response)
-            throws SessionAuthenticationException {
-        boolean containsToken = this.csrfTokenRepository.loadToken(request) != null;
-        if(containsToken) {
-            CsrfToken newToken = this.csrfTokenRepository.generateToken(request);
-            this.csrfTokenRepository.saveToken(null, request, response);
-            this.csrfTokenRepository.saveToken(newToken, request, response);
-        }
-    }
+	/*
+	 * (non-Javadoc)
+	 *
+	 * @see org.springframework.security.web.authentication.session.
+	 * SessionAuthenticationStrategy
+	 * #onAuthentication(org.springframework.security.core.Authentication,
+	 * javax.servlet.http.HttpServletRequest, javax.servlet.http.HttpServletResponse)
+	 */
+	@Override
+	public void onAuthentication(Authentication authentication,
+			HttpServletRequest request, HttpServletResponse response)
+					throws SessionAuthenticationException {
+		boolean containsToken = this.csrfTokenRepository.loadToken(request) != null;
+		if (containsToken) {
+			this.csrfTokenRepository.saveToken(null, request, response);
+
+			CsrfToken newToken = this.csrfTokenRepository.generateToken(request);
+			this.csrfTokenRepository.saveToken(newToken, request, response);
+
+			request.setAttribute(CsrfToken.class.getName(), newToken);
+			request.setAttribute(newToken.getParameterName(), newToken);
+		}
+	}
 }

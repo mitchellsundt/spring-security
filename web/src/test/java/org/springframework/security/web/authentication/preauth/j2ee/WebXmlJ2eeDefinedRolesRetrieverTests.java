@@ -1,6 +1,21 @@
+/*
+ * Copyright 2002-2016 the original author or authors.
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
 package org.springframework.security.web.authentication.preauth.j2ee;
 
-import static org.junit.Assert.*;
+import static org.assertj.core.api.Assertions.*;
 
 import java.util.Arrays;
 import java.util.List;
@@ -13,46 +28,47 @@ import org.springframework.core.io.ResourceLoader;
 
 public class WebXmlJ2eeDefinedRolesRetrieverTests {
 
-    @Test
-    public void testRole1To4Roles() throws Exception {
-        List<String> ROLE1TO4_EXPECTED_ROLES = Arrays.asList(new String[] { "Role1", "Role2", "Role3", "Role4" });
-        final Resource webXml = new ClassPathResource("webxml/Role1-4.web.xml");
-        WebXmlMappableAttributesRetriever rolesRetriever = new WebXmlMappableAttributesRetriever();
+	@Test
+	public void testRole1To4Roles() throws Exception {
+		List<String> ROLE1TO4_EXPECTED_ROLES = Arrays.asList(new String[] { "Role1",
+				"Role2", "Role3", "Role4" });
+		final Resource webXml = new ClassPathResource("webxml/Role1-4.web.xml");
+		WebXmlMappableAttributesRetriever rolesRetriever = new WebXmlMappableAttributesRetriever();
 
-        rolesRetriever.setResourceLoader(new ResourceLoader() {
-            public ClassLoader getClassLoader() {
-                return Thread.currentThread().getContextClassLoader();
-            }
+		rolesRetriever.setResourceLoader(new ResourceLoader() {
+			public ClassLoader getClassLoader() {
+				return Thread.currentThread().getContextClassLoader();
+			}
 
-            public Resource getResource(String location) {
-                return webXml;
-            }
-        });
+			public Resource getResource(String location) {
+				return webXml;
+			}
+		});
 
-        rolesRetriever.afterPropertiesSet();
-        Set<String> j2eeRoles = rolesRetriever.getMappableAttributes();
-        assertNotNull(j2eeRoles);
-        assertTrue("J2eeRoles expected size: " + ROLE1TO4_EXPECTED_ROLES.size() + ", actual size: " + j2eeRoles.size(),
-                j2eeRoles.size() == ROLE1TO4_EXPECTED_ROLES.size());
-        assertTrue("J2eeRoles expected contents (arbitrary order): " + ROLE1TO4_EXPECTED_ROLES + ", actual content: " + j2eeRoles,
-                j2eeRoles.containsAll(ROLE1TO4_EXPECTED_ROLES));
-    }
+		rolesRetriever.afterPropertiesSet();
+		Set<String> j2eeRoles = rolesRetriever.getMappableAttributes();
+		assertThat(j2eeRoles).isNotNull();
+		assertThat(j2eeRoles.size()).withFailMessage("J2eeRoles expected size: " + ROLE1TO4_EXPECTED_ROLES.size()
+				+ ", actual size: " + j2eeRoles.size()).isEqualTo(ROLE1TO4_EXPECTED_ROLES.size());
+		assertThat(j2eeRoles).withFailMessage("J2eeRoles expected contents (arbitrary order).isTrue(): "
+				+ ROLE1TO4_EXPECTED_ROLES + ", actual content: " + j2eeRoles).containsAll(ROLE1TO4_EXPECTED_ROLES);
+	}
 
-    @Test
-    public void testGetZeroJ2eeRoles() throws Exception {
-        final Resource webXml = new ClassPathResource("webxml/NoRoles.web.xml");
-        WebXmlMappableAttributesRetriever rolesRetriever = new WebXmlMappableAttributesRetriever();
-        rolesRetriever.setResourceLoader(new ResourceLoader() {
-            public ClassLoader getClassLoader() {
-                return Thread.currentThread().getContextClassLoader();
-            }
+	@Test
+	public void testGetZeroJ2eeRoles() throws Exception {
+		final Resource webXml = new ClassPathResource("webxml/NoRoles.web.xml");
+		WebXmlMappableAttributesRetriever rolesRetriever = new WebXmlMappableAttributesRetriever();
+		rolesRetriever.setResourceLoader(new ResourceLoader() {
+			public ClassLoader getClassLoader() {
+				return Thread.currentThread().getContextClassLoader();
+			}
 
-            public Resource getResource(String location) {
-                return webXml;
-            }
-        });
-        rolesRetriever.afterPropertiesSet();
-        Set<String> j2eeRoles = rolesRetriever.getMappableAttributes();
-        assertEquals("J2eeRoles expected size: 0, actual size: " + j2eeRoles.size(), 0, j2eeRoles.size());
-    }
+			public Resource getResource(String location) {
+				return webXml;
+			}
+		});
+		rolesRetriever.afterPropertiesSet();
+		Set<String> j2eeRoles = rolesRetriever.getMappableAttributes();
+		assertThat(j2eeRoles).withFailMessage("actual size: " + j2eeRoles.size() + "J2eeRoles expected size: 0").isEmpty();
+	}
 }

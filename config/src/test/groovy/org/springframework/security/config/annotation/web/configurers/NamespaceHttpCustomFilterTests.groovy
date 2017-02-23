@@ -17,6 +17,7 @@ package org.springframework.security.config.annotation.web.configurers;
 
 import java.io.IOException;
 
+import javax.servlet.FilterChain
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -55,6 +56,7 @@ import org.springframework.security.web.servletapi.SecurityContextHolderAwareReq
 import org.springframework.security.web.util.matcher.AntPathRequestMatcher
 import org.springframework.security.web.util.matcher.AnyRequestMatcher;
 import org.springframework.security.web.util.matcher.RequestMatcher
+import org.springframework.web.filter.OncePerRequestFilter
 
 import spock.lang.Ignore;
 
@@ -65,106 +67,131 @@ import spock.lang.Ignore;
  *
  */
 public class NamespaceHttpCustomFilterTests extends BaseSpringSpec {
-    def "http/custom-filter@before"() {
-        when:
-        loadConfig(CustomFilterBeforeConfig)
-        then:
-        filterChain().filters[0].class == CustomFilter
-    }
+	def "http/custom-filter@before"() {
+		when:
+		loadConfig(CustomFilterBeforeConfig)
+		then:
+		filterChain().filters[0].class == CustomFilter
+	}
 
-    @Configuration
-    static class CustomFilterBeforeConfig extends BaseWebConfig {
-        CustomFilterBeforeConfig() {
-            // do not add the default filters to make testing easier
-            super(true)
-        }
+	@Configuration
+	static class CustomFilterBeforeConfig extends BaseWebConfig {
+		CustomFilterBeforeConfig() {
+			// do not add the default filters to make testing easier
+			super(true)
+		}
 
-        protected void configure(HttpSecurity http) {
-            http
-                .addFilterBefore(new CustomFilter(), UsernamePasswordAuthenticationFilter.class)
-                .formLogin()
-        }
-    }
+		protected void configure(HttpSecurity http) {
+			http
+				.addFilterBefore(new CustomFilter(), UsernamePasswordAuthenticationFilter.class)
+				.formLogin()
+		}
+	}
 
-    def "http/custom-filter@after"() {
-        when:
-        loadConfig(CustomFilterAfterConfig)
-        then:
-        filterChain().filters[1].class == CustomFilter
-    }
+	def "http/custom-filter@after"() {
+		when:
+		loadConfig(CustomFilterAfterConfig)
+		then:
+		filterChain().filters[1].class == CustomFilter
+	}
 
-    @Configuration
-    static class CustomFilterAfterConfig extends BaseWebConfig {
-        CustomFilterAfterConfig() {
-            // do not add the default filters to make testing easier
-            super(true)
-        }
+	@Configuration
+	static class CustomFilterAfterConfig extends BaseWebConfig {
+		CustomFilterAfterConfig() {
+			// do not add the default filters to make testing easier
+			super(true)
+		}
 
-        protected void configure(HttpSecurity http) {
-            http
-                .addFilterAfter(new CustomFilter(), UsernamePasswordAuthenticationFilter.class)
-                .formLogin()
-        }
-    }
+		protected void configure(HttpSecurity http) {
+			http
+				.addFilterAfter(new CustomFilter(), UsernamePasswordAuthenticationFilter.class)
+				.formLogin()
+		}
+	}
 
-    def "http/custom-filter@position"() {
-        when:
-        loadConfig(CustomFilterPositionConfig)
-        then:
-        filterChain().filters.collect { it.class } == [CustomFilter]
-    }
+	def "http/custom-filter@position"() {
+		when:
+		loadConfig(CustomFilterPositionConfig)
+		then:
+		filterChain().filters.collect { it.class } == [CustomFilter]
+	}
 
-    @Configuration
-    static class CustomFilterPositionConfig extends BaseWebConfig {
-        CustomFilterPositionConfig() {
-            // do not add the default filters to make testing easier
-            super(true)
-        }
+	@Configuration
+	static class CustomFilterPositionConfig extends BaseWebConfig {
+		CustomFilterPositionConfig() {
+			// do not add the default filters to make testing easier
+			super(true)
+		}
 
-        protected void configure(HttpSecurity http) {
-            http
-                // this works so long as the CustomFilter extends one of the standard filters
-                // if not, use addFilterBefore or addFilterAfter
-                .addFilter(new CustomFilter())
-        }
+		protected void configure(HttpSecurity http) {
+			http
+				// this works so long as the CustomFilter extends one of the standard filters
+				// if not, use addFilterBefore or addFilterAfter
+				.addFilter(new CustomFilter())
+		}
+	}
 
-    }
+	def "http/custom-filter@position at"() {
+		when:
+		loadConfig(CustomFilterPositionAtConfig)
+		then:
+		filterChain().filters.collect { it.class } == [OtherCustomFilter]
+	}
 
-    def "http/custom-filter no AuthenticationManager in HttpSecurity"() {
-        when:
-        loadConfig(NoAuthenticationManagerInHtppConfigurationConfig)
-        then:
-        filterChain().filters[0].class == CustomFilter
-    }
+	@Configuration
+	static class CustomFilterPositionAtConfig extends BaseWebConfig {
+		CustomFilterPositionAtConfig() {
+			// do not add the default filters to make testing easier
+			super(true)
+		}
 
-    @Configuration
-    @EnableWebSecurity
-    static class NoAuthenticationManagerInHtppConfigurationConfig extends WebSecurityConfigurerAdapter {
-        NoAuthenticationManagerInHtppConfigurationConfig() {
-            super(true)
-        }
+		protected void configure(HttpSecurity http) {
+			http
+				.addFilterAt(new OtherCustomFilter(), UsernamePasswordAuthenticationFilter.class)
+		}
+	}
 
-        protected AuthenticationManager authenticationManager()
-                throws Exception {
-            return new CustomAuthenticationManager();
-        }
+	def "http/custom-filter no AuthenticationManager in HttpSecurity"() {
+		when:
+		loadConfig(NoAuthenticationManagerInHtppConfigurationConfig)
+		then:
+		filterChain().filters[0].class == CustomFilter
+	}
 
-        @Override
-        protected void configure(HttpSecurity http) {
-            http
-                .authorizeRequests()
-                    .anyRequest().hasRole("USER")
-                    .and()
-                .addFilterBefore(new CustomFilter(), UsernamePasswordAuthenticationFilter.class)
-        }
-    }
+	@EnableWebSecurity
+	static class NoAuthenticationManagerInHtppConfigurationConfig extends WebSecurityConfigurerAdapter {
+		NoAuthenticationManagerInHtppConfigurationConfig() {
+			super(true)
+		}
 
-    static class CustomFilter extends UsernamePasswordAuthenticationFilter {}
+		protected AuthenticationManager authenticationManager()
+				throws Exception {
+			return new CustomAuthenticationManager();
+		}
 
-    static class CustomAuthenticationManager implements AuthenticationManager {
-        public Authentication authenticate(Authentication authentication)
-                throws AuthenticationException {
-            return null;
-        }
-    }
+		@Override
+		protected void configure(HttpSecurity http) {
+			http
+				.authorizeRequests()
+					.anyRequest().hasRole("USER")
+					.and()
+				.addFilterBefore(new CustomFilter(), UsernamePasswordAuthenticationFilter.class)
+		}
+	}
+
+	static class CustomFilter extends UsernamePasswordAuthenticationFilter {}
+	static class OtherCustomFilter extends OncePerRequestFilter {
+		protected void doFilterInternal(
+				HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
+		throws ServletException, IOException {
+			filterChain.doFilter(request,response);
+		}
+	}
+
+	static class CustomAuthenticationManager implements AuthenticationManager {
+		public Authentication authenticate(Authentication authentication)
+				throws AuthenticationException {
+			return null;
+		}
+	}
 }

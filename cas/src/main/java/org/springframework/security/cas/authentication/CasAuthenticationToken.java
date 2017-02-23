@@ -1,10 +1,11 @@
-/* Copyright 2004, 2005, 2006 Acegi Technology Pty Limited
+/*
+ * Copyright 2004, 2005, 2006 Acegi Technology Pty Limited
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *      http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -23,6 +24,7 @@ import org.springframework.security.authentication.AbstractAuthenticationToken;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.SpringSecurityCoreVersion;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.util.Assert;
 
 /**
  * Represents a successful CAS <code>Authentication</code>.
@@ -30,103 +32,144 @@ import org.springframework.security.core.userdetails.UserDetails;
  * @author Ben Alex
  * @author Scott Battaglia
  */
-public class CasAuthenticationToken extends AbstractAuthenticationToken implements Serializable {
+public class CasAuthenticationToken extends AbstractAuthenticationToken implements
+		Serializable {
 
-    private static final long serialVersionUID = SpringSecurityCoreVersion.SERIAL_VERSION_UID;
+	private static final long serialVersionUID = SpringSecurityCoreVersion.SERIAL_VERSION_UID;
 
-    //~ Instance fields ================================================================================================
-    private final Object credentials;
-    private final Object principal;
-    private final UserDetails userDetails;
-    private final int keyHash;
-    private final Assertion assertion;
+	// ~ Instance fields
+	// ================================================================================================
+	private final Object credentials;
+	private final Object principal;
+	private final UserDetails userDetails;
+	private final int keyHash;
+	private final Assertion assertion;
 
-    //~ Constructors ===================================================================================================
+	// ~ Constructors
+	// ===================================================================================================
 
-    /**
-     * Constructor.
-     *
-     * @param key to identify if this object made by a given {@link
-     *        CasAuthenticationProvider}
-     * @param principal typically the UserDetails object (cannot  be <code>null</code>)
-     * @param credentials the service/proxy ticket ID from CAS (cannot be
-     *        <code>null</code>)
-     * @param authorities the authorities granted to the user (from the {@link
-     *        org.springframework.security.core.userdetails.UserDetailsService}) (cannot be <code>null</code>)
-     * @param userDetails the user details (from the {@link
-     *        org.springframework.security.core.userdetails.UserDetailsService}) (cannot be <code>null</code>)
-     * @param assertion the assertion returned from the CAS servers.  It contains the principal and how to obtain a
-     *        proxy ticket for the user.
-     *
-     * @throws IllegalArgumentException if a <code>null</code> was passed
-     */
-    public CasAuthenticationToken(final String key, final Object principal, final Object credentials,
-        final Collection<? extends GrantedAuthority> authorities, final UserDetails userDetails, final Assertion assertion) {
-        super(authorities);
+	/**
+	 * Constructor.
+	 *
+	 * @param key         to identify if this object made by a given
+	 *                    {@link CasAuthenticationProvider}
+	 * @param principal   typically the UserDetails object (cannot be <code>null</code>)
+	 * @param credentials the service/proxy ticket ID from CAS (cannot be
+	 *                    <code>null</code>)
+	 * @param authorities the authorities granted to the user (from the
+	 *                    {@link org.springframework.security.core.userdetails.UserDetailsService}) (cannot
+	 *                    be <code>null</code>)
+	 * @param userDetails the user details (from the
+	 *                    {@link org.springframework.security.core.userdetails.UserDetailsService}) (cannot
+	 *                    be <code>null</code>)
+	 * @param assertion   the assertion returned from the CAS servers. It contains the
+	 *                    principal and how to obtain a proxy ticket for the user.
+	 * @throws IllegalArgumentException if a <code>null</code> was passed
+	 */
+	public CasAuthenticationToken(final String key, final Object principal,
+								final Object credentials,
+								final Collection<? extends GrantedAuthority> authorities,
+								final UserDetails userDetails, final Assertion assertion) {
+		this(extractKeyHash(key), principal, credentials, authorities, userDetails, assertion);
+	}
 
-        if ((key == null) || ("".equals(key)) || (principal == null) || "".equals(principal) || (credentials == null)
-            || "".equals(credentials) || (authorities == null) || (userDetails == null) || (assertion == null)) {
-            throw new IllegalArgumentException("Cannot pass null or empty values to constructor");
-        }
+	/**
+	 * Private constructor for Jackson Deserialization support
+	 *
+	 * @param keyHash     hashCode of provided key to identify if this object made by a given
+	 *                    {@link CasAuthenticationProvider}
+	 * @param principal   typically the UserDetails object (cannot be <code>null</code>)
+	 * @param credentials the service/proxy ticket ID from CAS (cannot be
+	 *                    <code>null</code>)
+	 * @param authorities the authorities granted to the user (from the
+	 *                    {@link org.springframework.security.core.userdetails.UserDetailsService}) (cannot
+	 *                    be <code>null</code>)
+	 * @param userDetails the user details (from the
+	 *                    {@link org.springframework.security.core.userdetails.UserDetailsService}) (cannot
+	 *                    be <code>null</code>)
+	 * @param assertion   the assertion returned from the CAS servers. It contains the
+	 *                    principal and how to obtain a proxy ticket for the user.
+	 * @throws IllegalArgumentException if a <code>null</code> was passed
+	 * @since 4.2
+	 */
+	private CasAuthenticationToken(final Integer keyHash, final Object principal,
+									final Object credentials,
+									final Collection<? extends GrantedAuthority> authorities,
+									final UserDetails userDetails, final Assertion assertion) {
+		super(authorities);
 
-        this.keyHash = key.hashCode();
-        this.principal = principal;
-        this.credentials = credentials;
-        this.userDetails = userDetails;
-        this.assertion = assertion;
-        setAuthenticated(true);
-    }
+		if ((principal == null)
+				|| "".equals(principal) || (credentials == null)
+				|| "".equals(credentials) || (authorities == null)
+				|| (userDetails == null) || (assertion == null)) {
+			throw new IllegalArgumentException(
+					"Cannot pass null or empty values to constructor");
+		}
 
-    //~ Methods ========================================================================================================
+		this.keyHash = keyHash;
+		this.principal = principal;
+		this.credentials = credentials;
+		this.userDetails = userDetails;
+		this.assertion = assertion;
+		setAuthenticated(true);
+	}
 
-    public boolean equals(final Object obj) {
-        if (!super.equals(obj)) {
-            return false;
-        }
+	// ~ Methods
+	// ========================================================================================================
 
-        if (obj instanceof CasAuthenticationToken) {
-            CasAuthenticationToken test = (CasAuthenticationToken) obj;
+	private static Integer extractKeyHash(String key) {
+		Assert.hasLength(key, "key cannot be null or empty");
+		return key.hashCode();
+	}
 
-            if (!this.assertion.equals(test.getAssertion())) {
-                return false;
-            }
+	public boolean equals(final Object obj) {
+		if (!super.equals(obj)) {
+			return false;
+		}
 
-            if (this.getKeyHash() != test.getKeyHash()) {
-                return false;
-            }
+		if (obj instanceof CasAuthenticationToken) {
+			CasAuthenticationToken test = (CasAuthenticationToken) obj;
 
-            return true;
-        }
+			if (!this.assertion.equals(test.getAssertion())) {
+				return false;
+			}
 
-        return false;
-    }
+			if (this.getKeyHash() != test.getKeyHash()) {
+				return false;
+			}
 
-    public Object getCredentials() {
-        return this.credentials;
-    }
+			return true;
+		}
 
-    public int getKeyHash() {
-        return this.keyHash;
-    }
+		return false;
+	}
 
-    public Object getPrincipal() {
-        return this.principal;
-    }
+	public Object getCredentials() {
+		return this.credentials;
+	}
 
-    public Assertion getAssertion() {
-        return this.assertion;
-    }
+	public int getKeyHash() {
+		return this.keyHash;
+	}
 
-    public UserDetails getUserDetails() {
-        return userDetails;
-    }
+	public Object getPrincipal() {
+		return this.principal;
+	}
 
-    public String toString() {
-        StringBuilder sb = new StringBuilder();
-        sb.append(super.toString());
-        sb.append(" Assertion: ").append(this.assertion);
-        sb.append(" Credentials (Service/Proxy Ticket): ").append(this.credentials);
+	public Assertion getAssertion() {
+		return this.assertion;
+	}
 
-        return (sb.toString());
-    }
+	public UserDetails getUserDetails() {
+		return userDetails;
+	}
+
+	public String toString() {
+		StringBuilder sb = new StringBuilder();
+		sb.append(super.toString());
+		sb.append(" Assertion: ").append(this.assertion);
+		sb.append(" Credentials (Service/Proxy Ticket): ").append(this.credentials);
+
+		return (sb.toString());
+	}
 }

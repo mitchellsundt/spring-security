@@ -1,5 +1,5 @@
 /*
- * Copyright 2011 the original author or authors.
+ * Copyright 2011-2016 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,31 +16,31 @@
 package org.springframework.security.crypto.password;
 
 /**
- * A password encoder that does nothing.
- * Useful for testing where working with plain text passwords may be preferred.
+ * A password encoder that does nothing. Useful for testing where working with plain text
+ * passwords may be preferred.
  *
  * @author Keith Donald
  */
 public final class NoOpPasswordEncoder implements PasswordEncoder {
 
-    public String encode(CharSequence rawPassword) {
-        return rawPassword.toString();
-    }
+	public String encode(CharSequence rawPassword) {
+		return rawPassword.toString();
+	}
 
-    public boolean matches(CharSequence rawPassword, String encodedPassword) {
-        return rawPassword.toString().equals(encodedPassword);
-    }
+	public boolean matches(CharSequence rawPassword, String encodedPassword) {
+		return rawPassword.toString().equals(encodedPassword);
+	}
 
-    /**
-     * Get the singleton {@link NoOpPasswordEncoder}.
-     */
-    public static PasswordEncoder getInstance() {
-        return INSTANCE;
-    }
+	/**
+	 * Get the singleton {@link NoOpPasswordEncoder}.
+	 */
+	public static PasswordEncoder getInstance() {
+		return INSTANCE;
+	}
 
-    private static final PasswordEncoder INSTANCE = new NoOpPasswordEncoder();
+	private static final PasswordEncoder INSTANCE = new NoOpPasswordEncoder();
 
-    private NoOpPasswordEncoder() {
-    }
+	private NoOpPasswordEncoder() {
+	}
 
 }

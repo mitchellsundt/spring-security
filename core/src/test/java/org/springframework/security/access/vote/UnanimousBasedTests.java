@@ -1,10 +1,11 @@
-/* Copyright 2004, 2005, 2006 Acegi Technology Pty Limited
+/*
+ * Copyright 2004, 2005, 2006 Acegi Technology Pty Limited
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *      http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -15,150 +16,152 @@
 
 package org.springframework.security.access.vote;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.fail;
+
 import java.util.List;
 import java.util.Vector;
 
-import junit.framework.TestCase;
-
+import org.junit.Test;
 import org.springframework.security.access.AccessDecisionVoter;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.access.ConfigAttribute;
 import org.springframework.security.access.SecurityConfig;
-import org.springframework.security.access.vote.RoleVoter;
-import org.springframework.security.access.vote.UnanimousBased;
 import org.springframework.security.authentication.TestingAuthenticationToken;
-
 
 /**
  * Tests {@link UnanimousBased}.
  *
  * @author Ben Alex
  */
-public class UnanimousBasedTests extends TestCase {
+public class UnanimousBasedTests {
 
-    //~ Methods ========================================================================================================
+	// ~ Methods
+	// ========================================================================================================
 
-    private UnanimousBased makeDecisionManager() {
-        UnanimousBased decisionManager = new UnanimousBased();
-        RoleVoter roleVoter = new RoleVoter();
-        DenyVoter denyForSureVoter = new DenyVoter();
-        DenyAgainVoter denyAgainForSureVoter = new DenyAgainVoter();
-        List<AccessDecisionVoter> voters = new Vector<AccessDecisionVoter>();
-        voters.add(roleVoter);
-        voters.add(denyForSureVoter);
-        voters.add(denyAgainForSureVoter);
-        decisionManager.setDecisionVoters(voters);
+	private UnanimousBased makeDecisionManager() {
+		RoleVoter roleVoter = new RoleVoter();
+		DenyVoter denyForSureVoter = new DenyVoter();
+		DenyAgainVoter denyAgainForSureVoter = new DenyAgainVoter();
+		List<AccessDecisionVoter<? extends Object>> voters = new Vector<AccessDecisionVoter<? extends Object>>();
+		voters.add(roleVoter);
+		voters.add(denyForSureVoter);
+		voters.add(denyAgainForSureVoter);
+		return new UnanimousBased(voters);
+	}
 
-        return decisionManager;
-    }
+	private UnanimousBased makeDecisionManagerWithFooBarPrefix() {
+		RoleVoter roleVoter = new RoleVoter();
+		roleVoter.setRolePrefix("FOOBAR_");
 
-    private UnanimousBased makeDecisionManagerWithFooBarPrefix() {
-        UnanimousBased decisionManager = new UnanimousBased();
-        RoleVoter roleVoter = new RoleVoter();
-        roleVoter.setRolePrefix("FOOBAR_");
+		DenyVoter denyForSureVoter = new DenyVoter();
+		DenyAgainVoter denyAgainForSureVoter = new DenyAgainVoter();
+		List<AccessDecisionVoter<? extends Object>> voters = new Vector<AccessDecisionVoter<? extends Object>>();
+		voters.add(roleVoter);
+		voters.add(denyForSureVoter);
+		voters.add(denyAgainForSureVoter);
+		return new UnanimousBased(voters);
+	}
 
-        DenyVoter denyForSureVoter = new DenyVoter();
-        DenyAgainVoter denyAgainForSureVoter = new DenyAgainVoter();
-        List<AccessDecisionVoter> voters = new Vector<AccessDecisionVoter>();
-        voters.add(roleVoter);
-        voters.add(denyForSureVoter);
-        voters.add(denyAgainForSureVoter);
-        decisionManager.setDecisionVoters(voters);
+	private TestingAuthenticationToken makeTestToken() {
+		return new TestingAuthenticationToken("somebody", "password", "ROLE_1", "ROLE_2");
+	}
 
-        return decisionManager;
-    }
+	private TestingAuthenticationToken makeTestTokenWithFooBarPrefix() {
+		return new TestingAuthenticationToken("somebody", "password", "FOOBAR_1",
+				"FOOBAR_2");
+	}
 
-    private TestingAuthenticationToken makeTestToken() {
-        return new TestingAuthenticationToken("somebody", "password", "ROLE_1", "ROLE_2");
-    }
+	@Test
+	public void testOneAffirmativeVoteOneDenyVoteOneAbstainVoteDeniesAccess()
+			throws Exception {
+		TestingAuthenticationToken auth = makeTestToken();
+		UnanimousBased mgr = makeDecisionManager();
 
-    private TestingAuthenticationToken makeTestTokenWithFooBarPrefix() {
-        return new TestingAuthenticationToken("somebody", "password", "FOOBAR_1", "FOOBAR_2");
-    }
+		List<ConfigAttribute> config = SecurityConfig.createList(
+				new String[] { "ROLE_1", "DENY_FOR_SURE" });
 
-    public void testOneAffirmativeVoteOneDenyVoteOneAbstainVoteDeniesAccess() throws Exception {
-        TestingAuthenticationToken auth = makeTestToken();
-        UnanimousBased mgr = makeDecisionManager();
+		try {
+			mgr.decide(auth, new Object(), config);
+			fail("Should have thrown AccessDeniedException");
+		}
+		catch (AccessDeniedException expected) {
+		}
+	}
 
-        List<ConfigAttribute> config = SecurityConfig.createList(new String[]{"ROLE_1", "DENY_FOR_SURE"});
+	@Test
+	public void testOneAffirmativeVoteTwoAbstainVotesGrantsAccess() throws Exception {
+		TestingAuthenticationToken auth = makeTestToken();
+		UnanimousBased mgr = makeDecisionManager();
 
-        try {
-            mgr.decide(auth, new Object(), config);
-            fail("Should have thrown AccessDeniedException");
-        } catch (AccessDeniedException expected) {
-            assertTrue(true);
-        }
-    }
+		List<ConfigAttribute> config = SecurityConfig.createList("ROLE_2");
 
-    public void testOneAffirmativeVoteTwoAbstainVotesGrantsAccess() throws Exception {
-        TestingAuthenticationToken auth = makeTestToken();
-        UnanimousBased mgr = makeDecisionManager();
+		mgr.decide(auth, new Object(), config);
+	}
 
-        List<ConfigAttribute> config = SecurityConfig.createList("ROLE_2");
+	@Test
+	public void testOneDenyVoteTwoAbstainVotesDeniesAccess() throws Exception {
+		TestingAuthenticationToken auth = makeTestToken();
+		UnanimousBased mgr = makeDecisionManager();
 
-        mgr.decide(auth, new Object(), config);
-        assertTrue(true);
-    }
+		List<ConfigAttribute> config = SecurityConfig.createList("ROLE_WE_DO_NOT_HAVE");
 
-    public void testOneDenyVoteTwoAbstainVotesDeniesAccess() throws Exception {
-        TestingAuthenticationToken auth = makeTestToken();
-        UnanimousBased mgr = makeDecisionManager();
+		try {
+			mgr.decide(auth, new Object(), config);
+			fail("Should have thrown AccessDeniedException");
+		}
+		catch (AccessDeniedException expected) {
+		}
+	}
 
-        List<ConfigAttribute> config = SecurityConfig.createList("ROLE_WE_DO_NOT_HAVE");
+	@Test
+	public void testRoleVoterPrefixObserved() throws Exception {
+		TestingAuthenticationToken auth = makeTestTokenWithFooBarPrefix();
+		UnanimousBased mgr = makeDecisionManagerWithFooBarPrefix();
 
-        try {
-            mgr.decide(auth, new Object(), config);
-            fail("Should have thrown AccessDeniedException");
-        } catch (AccessDeniedException expected) {
-            assertTrue(true);
-        }
-    }
+		List<ConfigAttribute> config = SecurityConfig.createList(
+				new String[] { "FOOBAR_1", "FOOBAR_2" });
 
-    public void testRoleVoterPrefixObserved() throws Exception {
-        TestingAuthenticationToken auth = makeTestTokenWithFooBarPrefix();
-        UnanimousBased mgr = makeDecisionManagerWithFooBarPrefix();
+		mgr.decide(auth, new Object(), config);
+	}
 
-        List<ConfigAttribute> config = SecurityConfig.createList(new String[]{"FOOBAR_1", "FOOBAR_2"});
+	@Test
+	public void testThreeAbstainVotesDeniesAccessWithDefault() throws Exception {
+		TestingAuthenticationToken auth = makeTestToken();
+		UnanimousBased mgr = makeDecisionManager();
 
-        mgr.decide(auth, new Object(), config);
-        assertTrue(true);
-    }
+		assertThat(!mgr.isAllowIfAllAbstainDecisions()).isTrue(); // check default
 
-    public void testThreeAbstainVotesDeniesAccessWithDefault() throws Exception {
-        TestingAuthenticationToken auth = makeTestToken();
-        UnanimousBased mgr = makeDecisionManager();
+		List<ConfigAttribute> config = SecurityConfig.createList("IGNORED_BY_ALL");
 
-        assertTrue(!mgr.isAllowIfAllAbstainDecisions()); // check default
+		try {
+			mgr.decide(auth, new Object(), config);
+			fail("Should have thrown AccessDeniedException");
+		}
+		catch (AccessDeniedException expected) {
+		}
+	}
 
-        List<ConfigAttribute> config = SecurityConfig.createList("IGNORED_BY_ALL");
+	@Test
+	public void testThreeAbstainVotesGrantsAccessWithoutDefault() throws Exception {
+		TestingAuthenticationToken auth = makeTestToken();
+		UnanimousBased mgr = makeDecisionManager();
+		mgr.setAllowIfAllAbstainDecisions(true);
+		assertThat(mgr.isAllowIfAllAbstainDecisions()).isTrue(); // check changed
 
-        try {
-            mgr.decide(auth, new Object(), config);
-            fail("Should have thrown AccessDeniedException");
-        } catch (AccessDeniedException expected) {
-            assertTrue(true);
-        }
-    }
+		List<ConfigAttribute> config = SecurityConfig.createList("IGNORED_BY_ALL");
 
-    public void testThreeAbstainVotesGrantsAccessWithoutDefault() throws Exception {
-        TestingAuthenticationToken auth = makeTestToken();
-        UnanimousBased mgr = makeDecisionManager();
-        mgr.setAllowIfAllAbstainDecisions(true);
-        assertTrue(mgr.isAllowIfAllAbstainDecisions()); // check changed
+		mgr.decide(auth, new Object(), config);
+	}
 
-        List<ConfigAttribute> config = SecurityConfig.createList("IGNORED_BY_ALL");
+	@Test
+	public void testTwoAffirmativeVotesTwoAbstainVotesGrantsAccess() throws Exception {
+		TestingAuthenticationToken auth = makeTestToken();
+		UnanimousBased mgr = makeDecisionManager();
 
-        mgr.decide(auth, new Object(), config);
-        assertTrue(true);
-    }
+		List<ConfigAttribute> config = SecurityConfig.createList(
+				new String[] { "ROLE_1", "ROLE_2" });
 
-    public void testTwoAffirmativeVotesTwoAbstainVotesGrantsAccess() throws Exception {
-        TestingAuthenticationToken auth = makeTestToken();
-        UnanimousBased mgr = makeDecisionManager();
-
-        List<ConfigAttribute> config = SecurityConfig.createList(new String[]{"ROLE_1", "ROLE_2"});
-
-        mgr.decide(auth, new Object(), config);
-        assertTrue(true);
-    }
+		mgr.decide(auth, new Object(), config);
+	}
 }

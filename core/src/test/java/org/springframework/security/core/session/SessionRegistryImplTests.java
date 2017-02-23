@@ -1,10 +1,11 @@
-/* Copyright 2004, 2005, 2006 Acegi Technology Pty Limited
+/*
+ * Copyright 2004, 2005, 2006 Acegi Technology Pty Limited
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *      http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -15,7 +16,7 @@
 
 package org.springframework.security.core.session;
 
-import static org.junit.Assert.*;
+import static org.assertj.core.api.Assertions.*;
 
 import java.util.Date;
 import java.util.List;
@@ -33,153 +34,158 @@ import org.springframework.security.core.session.SessionRegistryImpl;
  * @author Ben Alex
  */
 public class SessionRegistryImplTests {
-    private SessionRegistryImpl sessionRegistry;
+	private SessionRegistryImpl sessionRegistry;
 
-    //~ Methods ========================================================================================================
+	// ~ Methods
+	// ========================================================================================================
 
-    @Before
-    public void setUp() throws Exception {
-        sessionRegistry = new SessionRegistryImpl();
-    }
+	@Before
+	public void setUp() throws Exception {
+		sessionRegistry = new SessionRegistryImpl();
+	}
 
-    @Test
-    public void sessionDestroyedEventRemovesSessionFromRegistry() {
-        Object principal = "Some principal object";
-        final String sessionId = "zzzz";
+	@Test
+	public void sessionDestroyedEventRemovesSessionFromRegistry() {
+		Object principal = "Some principal object";
+		final String sessionId = "zzzz";
 
-        // Register new Session
-        sessionRegistry.registerNewSession(sessionId, principal);
+		// Register new Session
+		sessionRegistry.registerNewSession(sessionId, principal);
 
-        // De-register session via an ApplicationEvent
-        sessionRegistry.onApplicationEvent(new SessionDestroyedEvent("") {
-            @Override
-            public String getId() {
-                return sessionId;
-            }
+		// De-register session via an ApplicationEvent
+		sessionRegistry.onApplicationEvent(new SessionDestroyedEvent("") {
+			@Override
+			public String getId() {
+				return sessionId;
+			}
 
-            @Override
-            public List<SecurityContext> getSecurityContexts() {
-                return null;
-            }
-        });
+			@Override
+			public List<SecurityContext> getSecurityContexts() {
+				return null;
+			}
+		});
 
-        // Check attempts to retrieve cleared session return null
-        assertNull(sessionRegistry.getSessionInformation(sessionId));
-    }
+		// Check attempts to retrieve cleared session return null
+		assertThat(sessionRegistry.getSessionInformation(sessionId)).isNull();
+	}
 
-    @Test
-    public void testMultiplePrincipals() throws Exception {
-        Object principal1 = "principal_1";
-        Object principal2 = "principal_2";
-        String sessionId1 = "1234567890";
-        String sessionId2 = "9876543210";
-        String sessionId3 = "5432109876";
+	@Test
+	public void testMultiplePrincipals() throws Exception {
+		Object principal1 = "principal_1";
+		Object principal2 = "principal_2";
+		String sessionId1 = "1234567890";
+		String sessionId2 = "9876543210";
+		String sessionId3 = "5432109876";
 
-        sessionRegistry.registerNewSession(sessionId1, principal1);
-        sessionRegistry.registerNewSession(sessionId2, principal1);
-        sessionRegistry.registerNewSession(sessionId3, principal2);
+		sessionRegistry.registerNewSession(sessionId1, principal1);
+		sessionRegistry.registerNewSession(sessionId2, principal1);
+		sessionRegistry.registerNewSession(sessionId3, principal2);
 
-        assertEquals(2, sessionRegistry.getAllPrincipals().size());
-        assertTrue(sessionRegistry.getAllPrincipals().contains(principal1));
-        assertTrue(sessionRegistry.getAllPrincipals().contains(principal2));
-    }
+		assertThat(sessionRegistry.getAllPrincipals()).hasSize(2);
+		assertThat(sessionRegistry.getAllPrincipals().contains(principal1)).isTrue();
+		assertThat(sessionRegistry.getAllPrincipals().contains(principal2)).isTrue();
+	}
 
-    @Test
-    public void testSessionInformationLifecycle() throws Exception {
-        Object principal = "Some principal object";
-        String sessionId = "1234567890";
-        // Register new Session
-        sessionRegistry.registerNewSession(sessionId, principal);
+	@Test
+	public void testSessionInformationLifecycle() throws Exception {
+		Object principal = "Some principal object";
+		String sessionId = "1234567890";
+		// Register new Session
+		sessionRegistry.registerNewSession(sessionId, principal);
 
-        // Retrieve existing session by session ID
-        Date currentDateTime = sessionRegistry.getSessionInformation(sessionId).getLastRequest();
-        assertEquals(principal, sessionRegistry.getSessionInformation(sessionId).getPrincipal());
-        assertEquals(sessionId, sessionRegistry.getSessionInformation(sessionId).getSessionId());
-        assertNotNull(sessionRegistry.getSessionInformation(sessionId).getLastRequest());
+		// Retrieve existing session by session ID
+		Date currentDateTime = sessionRegistry.getSessionInformation(sessionId)
+				.getLastRequest();
+		assertThat(sessionRegistry.getSessionInformation(sessionId).getPrincipal()).isEqualTo(principal);
+		assertThat(sessionRegistry.getSessionInformation(sessionId).getSessionId()).isEqualTo(sessionId);
+		assertThat(sessionRegistry.getSessionInformation(sessionId).getLastRequest()).isNotNull();
 
-        // Retrieve existing session by principal
-        assertEquals(1, sessionRegistry.getAllSessions(principal, false).size());
+		// Retrieve existing session by principal
+		assertThat(sessionRegistry.getAllSessions(principal, false)).hasSize(1);
 
-        // Sleep to ensure SessionRegistryImpl will update time
-        Thread.sleep(1000);
+		// Sleep to ensure SessionRegistryImpl will update time
+		Thread.sleep(1000);
 
-        // Update request date/time
-        sessionRegistry.refreshLastRequest(sessionId);
+		// Update request date/time
+		sessionRegistry.refreshLastRequest(sessionId);
 
-        Date retrieved = sessionRegistry.getSessionInformation(sessionId).getLastRequest();
-        assertTrue(retrieved.after(currentDateTime));
+		Date retrieved = sessionRegistry.getSessionInformation(sessionId)
+				.getLastRequest();
+		assertThat(retrieved.after(currentDateTime)).isTrue();
 
-        // Check it retrieves correctly when looked up via principal
-        assertEquals(retrieved, sessionRegistry.getAllSessions(principal, false).get(0).getLastRequest());
+		// Check it retrieves correctly when looked up via principal
+		assertThat(sessionRegistry.getAllSessions(principal, false).get(0).getLastRequest()).isCloseTo(retrieved, 2000L);
 
-        // Clear session information
-        sessionRegistry.removeSessionInformation(sessionId);
+		// Clear session information
+		sessionRegistry.removeSessionInformation(sessionId);
 
-        // Check attempts to retrieve cleared session return null
-        assertNull(sessionRegistry.getSessionInformation(sessionId));
-        assertEquals(0, sessionRegistry.getAllSessions(principal, false).size());
-    }
+		// Check attempts to retrieve cleared session return null
+		assertThat(sessionRegistry.getSessionInformation(sessionId)).isNull();
+		assertThat(sessionRegistry.getAllSessions(principal, false)).isEmpty();
+	}
 
-    @Test
-    public void testTwoSessionsOnePrincipalExpiring() throws Exception {
-        Object principal = "Some principal object";
-        String sessionId1 = "1234567890";
-        String sessionId2 = "9876543210";
+	@Test
+	public void testTwoSessionsOnePrincipalExpiring() throws Exception {
+		Object principal = "Some principal object";
+		String sessionId1 = "1234567890";
+		String sessionId2 = "9876543210";
 
-        sessionRegistry.registerNewSession(sessionId1, principal);
-        List<SessionInformation> sessions = sessionRegistry.getAllSessions(principal, false);
-        assertEquals(1, sessions.size());
-        assertTrue(contains(sessionId1, principal));
+		sessionRegistry.registerNewSession(sessionId1, principal);
+		List<SessionInformation> sessions = sessionRegistry.getAllSessions(principal,
+				false);
+		assertThat(sessions).hasSize(1);
+		assertThat(contains(sessionId1, principal)).isTrue();
 
-        sessionRegistry.registerNewSession(sessionId2, principal);
-        sessions = sessionRegistry.getAllSessions(principal, false);
-        assertEquals(2, sessions.size());
-        assertTrue(contains(sessionId2, principal));
+		sessionRegistry.registerNewSession(sessionId2, principal);
+		sessions = sessionRegistry.getAllSessions(principal, false);
+		assertThat(sessions).hasSize(2);
+		assertThat(contains(sessionId2, principal)).isTrue();
 
-        // Expire one session
-        SessionInformation session = sessionRegistry.getSessionInformation(sessionId2);
-        session.expireNow();
+		// Expire one session
+		SessionInformation session = sessionRegistry.getSessionInformation(sessionId2);
+		session.expireNow();
 
-        // Check retrieval still correct
-        assertTrue(sessionRegistry.getSessionInformation(sessionId2).isExpired());
-        assertFalse(sessionRegistry.getSessionInformation(sessionId1).isExpired());
-    }
+		// Check retrieval still correct
+		assertThat(sessionRegistry.getSessionInformation(sessionId2).isExpired()).isTrue();
+		assertThat(sessionRegistry.getSessionInformation(sessionId1).isExpired()).isFalse();
+	}
 
-    @Test
-    public void testTwoSessionsOnePrincipalHandling() throws Exception {
-        Object principal = "Some principal object";
-        String sessionId1 = "1234567890";
-        String sessionId2 = "9876543210";
+	@Test
+	public void testTwoSessionsOnePrincipalHandling() throws Exception {
+		Object principal = "Some principal object";
+		String sessionId1 = "1234567890";
+		String sessionId2 = "9876543210";
 
-        sessionRegistry.registerNewSession(sessionId1, principal);
-        List<SessionInformation> sessions = sessionRegistry.getAllSessions(principal, false);
-        assertEquals(1, sessions.size());
-        assertTrue(contains(sessionId1, principal));
+		sessionRegistry.registerNewSession(sessionId1, principal);
+		List<SessionInformation> sessions = sessionRegistry.getAllSessions(principal,
+				false);
+		assertThat(sessions).hasSize(1);
+		assertThat(contains(sessionId1, principal)).isTrue();
 
-        sessionRegistry.registerNewSession(sessionId2, principal);
-        sessions = sessionRegistry.getAllSessions(principal, false);
-        assertEquals(2, sessions.size());
-        assertTrue(contains(sessionId2, principal));
+		sessionRegistry.registerNewSession(sessionId2, principal);
+		sessions = sessionRegistry.getAllSessions(principal, false);
+		assertThat(sessions).hasSize(2);
+		assertThat(contains(sessionId2, principal)).isTrue();
 
-        sessionRegistry.removeSessionInformation(sessionId1);
-        sessions = sessionRegistry.getAllSessions(principal, false);
-        assertEquals(1, sessions.size());
-        assertTrue(contains(sessionId2, principal));
+		sessionRegistry.removeSessionInformation(sessionId1);
+		sessions = sessionRegistry.getAllSessions(principal, false);
+		assertThat(sessions).hasSize(1);
+		assertThat(contains(sessionId2, principal)).isTrue();
 
-        sessionRegistry.removeSessionInformation(sessionId2);
-        assertNull(sessionRegistry.getSessionInformation(sessionId2));
-        assertEquals(0, sessionRegistry.getAllSessions(principal, false).size());
-    }
+		sessionRegistry.removeSessionInformation(sessionId2);
+		assertThat(sessionRegistry.getSessionInformation(sessionId2)).isNull();
+		assertThat(sessionRegistry.getAllSessions(principal, false)).isEmpty();
+	}
 
-    private boolean contains(String sessionId, Object principal) {
-        List<SessionInformation> info = sessionRegistry.getAllSessions(principal, false);
+	private boolean contains(String sessionId, Object principal) {
+		List<SessionInformation> info = sessionRegistry.getAllSessions(principal, false);
 
-        for (int i = 0; i < info.size(); i++) {
-            if (sessionId.equals(info.get(i).getSessionId())) {
-                return true;
-            }
-        }
+		for (int i = 0; i < info.size(); i++) {
+			if (sessionId.equals(info.get(i).getSessionId())) {
+				return true;
+			}
+		}
 
-        return false;
-    }
+		return false;
+	}
 }

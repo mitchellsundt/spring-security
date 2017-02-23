@@ -1,5 +1,5 @@
 /*
- * Copyright 2010 the original author or authors.
+ * Copyright 2010-2016 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,17 +23,17 @@ import org.springframework.security.web.authentication.DelegatingAuthenticationE
 /**
  * PropertyEditor which creates ELRequestMatcher instances from Strings
  *
- * This allows to use a String in a BeanDefinition instead of an (inner) bean
- * if a RequestMatcher is required, e.g. in {@link DelegatingAuthenticationEntryPoint}
+ * This allows to use a String in a BeanDefinition instead of an (inner) bean if a
+ * RequestMatcher is required, e.g. in {@link DelegatingAuthenticationEntryPoint}
  *
  * @author Mike Wiesner
  * @since 3.0.2
  */
 public class RequestMatcherEditor extends PropertyEditorSupport {
 
-    @Override
-    public void setAsText(String text) throws IllegalArgumentException {
-        setValue(new ELRequestMatcher(text));
-    }
+	@Override
+	public void setAsText(String text) throws IllegalArgumentException {
+		setValue(new ELRequestMatcher(text));
+	}
 
 }

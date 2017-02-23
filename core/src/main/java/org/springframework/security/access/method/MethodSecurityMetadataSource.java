@@ -1,10 +1,11 @@
-/* Copyright 2004, 2005, 2006 Acegi Technology Pty Limited
+/*
+ * Copyright 2004, 2005, 2006 Acegi Technology Pty Limited
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *      http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -21,13 +22,12 @@ import java.util.Collection;
 import org.springframework.security.access.ConfigAttribute;
 import org.springframework.security.access.SecurityMetadataSource;
 
-
 /**
- * Interface for <code>SecurityMetadataSource</code> implementations
- * that are designed to perform lookups keyed on <code>Method</code>s.
+ * Interface for <code>SecurityMetadataSource</code> implementations that are designed to
+ * perform lookups keyed on <code>Method</code>s.
  *
  * @author Ben Alex
  */
 public interface MethodSecurityMetadataSource extends SecurityMetadataSource {
-    public Collection<ConfigAttribute> getAttributes(Method method, Class<?> targetClass);
+	public Collection<ConfigAttribute> getAttributes(Method method, Class<?> targetClass);
 }

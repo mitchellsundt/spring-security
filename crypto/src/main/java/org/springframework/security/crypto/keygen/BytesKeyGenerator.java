@@ -1,5 +1,5 @@
 /*
- * Copyright 2011 the original author or authors.
+ * Copyright 2011-2016 the original author or authors.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,15 +21,15 @@ package org.springframework.security.crypto.keygen;
  */
 public interface BytesKeyGenerator {
 
-    /**
-     * Get the length, in bytes, of keys created by this generator.
-     * Most unique keys are at least 8 bytes in length.
-     */
-    int getKeyLength();
+	/**
+	 * Get the length, in bytes, of keys created by this generator. Most unique keys are
+	 * at least 8 bytes in length.
+	 */
+	int getKeyLength();
 
-    /**
-     * Generate a new key.
-     */
-    byte[] generateKey();
+	/**
+	 * Generate a new key.
+	 */
+	byte[] generateKey();
 
 }

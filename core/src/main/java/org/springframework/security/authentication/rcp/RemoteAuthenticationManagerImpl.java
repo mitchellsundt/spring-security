@@ -1,10 +1,11 @@
-/* Copyright 2004, 2005, 2006 Acegi Technology Pty Limited
+/*
+ * Copyright 2004, 2005, 2006 Acegi Technology Pty Limited
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *      http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -24,42 +25,46 @@ import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.util.Assert;
 
-
 /**
  * Server-side processor of a remote authentication request.
  * <p>
- * This bean requires no security interceptor to protect it. Instead, the bean uses the configured
- * <code>AuthenticationManager</code> to resolve an authentication request.
+ * This bean requires no security interceptor to protect it. Instead, the bean uses the
+ * configured <code>AuthenticationManager</code> to resolve an authentication request.
  *
  * @author Ben Alex
  */
-public class RemoteAuthenticationManagerImpl implements RemoteAuthenticationManager, InitializingBean {
-    //~ Instance fields ================================================================================================
+public class RemoteAuthenticationManagerImpl implements RemoteAuthenticationManager,
+		InitializingBean {
+	// ~ Instance fields
+	// ================================================================================================
 
-    private AuthenticationManager authenticationManager;
+	private AuthenticationManager authenticationManager;
 
-    //~ Methods ========================================================================================================
+	// ~ Methods
+	// ========================================================================================================
 
-    public void afterPropertiesSet() throws Exception {
-        Assert.notNull(this.authenticationManager, "authenticationManager is required");
-    }
+	public void afterPropertiesSet() throws Exception {
+		Assert.notNull(this.authenticationManager, "authenticationManager is required");
+	}
 
-    public Collection<? extends GrantedAuthority> attemptAuthentication(String username, String password)
-            throws RemoteAuthenticationException {
-        UsernamePasswordAuthenticationToken request = new UsernamePasswordAuthenticationToken(username, password);
+	public Collection<? extends GrantedAuthority> attemptAuthentication(String username,
+			String password) throws RemoteAuthenticationException {
+		UsernamePasswordAuthenticationToken request = new UsernamePasswordAuthenticationToken(
+				username, password);
 
-        try {
-            return authenticationManager.authenticate(request).getAuthorities();
-        } catch (AuthenticationException authEx) {
-            throw new RemoteAuthenticationException(authEx.getMessage());
-        }
-    }
+		try {
+			return authenticationManager.authenticate(request).getAuthorities();
+		}
+		catch (AuthenticationException authEx) {
+			throw new RemoteAuthenticationException(authEx.getMessage());
+		}
+	}
 
-    protected AuthenticationManager getAuthenticationManager() {
-        return authenticationManager;
-    }
+	protected AuthenticationManager getAuthenticationManager() {
+		return authenticationManager;
+	}
 
-    public void setAuthenticationManager(AuthenticationManager authenticationManager) {
-        this.authenticationManager = authenticationManager;
-    }
+	public void setAuthenticationManager(AuthenticationManager authenticationManager) {
+		this.authenticationManager = authenticationManager;
+	}
 }

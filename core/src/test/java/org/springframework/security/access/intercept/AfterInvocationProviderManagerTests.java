@@ -1,10 +1,11 @@
-/* Copyright 2004, 2005, 2006 Acegi Technology Pty Limited
+/*
+ * Copyright 2004, 2005, 2006 Acegi Technology Pty Limited
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
- *     http://www.apache.org/licenses/LICENSE-2.0
+ *      http://www.apache.org/licenses/LICENSE-2.0
  *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
@@ -15,21 +16,21 @@
 
 package org.springframework.security.access.intercept;
 
+import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.fail;
+
 import java.util.Collection;
 import java.util.List;
 import java.util.Vector;
 
-import junit.framework.TestCase;
-
 import org.aopalliance.intercept.MethodInvocation;
+import org.junit.Test;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.access.AfterInvocationProvider;
 import org.springframework.security.access.ConfigAttribute;
 import org.springframework.security.access.SecurityConfig;
-import org.springframework.security.access.intercept.AfterInvocationProviderManager;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.util.SimpleMethodInvocation;
-
 
 /**
  * Tests {@link AfterInvocationProviderManager}.
@@ -37,135 +38,170 @@ import org.springframework.security.util.SimpleMethodInvocation;
  * @author Ben Alex
  */
 @SuppressWarnings("unchecked")
-public class AfterInvocationProviderManagerTests extends TestCase {
+public class AfterInvocationProviderManagerTests {
 
-    //~ Methods ========================================================================================================
+	// ~ Methods
+	// ========================================================================================================
+	@Test
+	public void testCorrectOperation() throws Exception {
+		AfterInvocationProviderManager manager = new AfterInvocationProviderManager();
+		List list = new Vector();
+		list.add(new MockAfterInvocationProvider("swap1", MethodInvocation.class,
+				new SecurityConfig("GIVE_ME_SWAP1")));
+		list.add(new MockAfterInvocationProvider("swap2", MethodInvocation.class,
+				new SecurityConfig("GIVE_ME_SWAP2")));
+		list.add(new MockAfterInvocationProvider("swap3", MethodInvocation.class,
+				new SecurityConfig("GIVE_ME_SWAP3")));
+		manager.setProviders(list);
+		assertThat(manager.getProviders()).isEqualTo(list);
+		manager.afterPropertiesSet();
 
-    public void testCorrectOperation() throws Exception {
-        AfterInvocationProviderManager manager = new AfterInvocationProviderManager();
-        List list = new Vector();
-        list.add(new MockAfterInvocationProvider("swap1", MethodInvocation.class, new SecurityConfig("GIVE_ME_SWAP1")));
-        list.add(new MockAfterInvocationProvider("swap2", MethodInvocation.class, new SecurityConfig("GIVE_ME_SWAP2")));
-        list.add(new MockAfterInvocationProvider("swap3", MethodInvocation.class, new SecurityConfig("GIVE_ME_SWAP3")));
-        manager.setProviders(list);
-        assertEquals(list, manager.getProviders());
-        manager.afterPropertiesSet();
+		List<ConfigAttribute> attr1 = SecurityConfig.createList(
+				new String[] { "GIVE_ME_SWAP1" });
+		List<ConfigAttribute> attr2 = SecurityConfig.createList(
+				new String[] { "GIVE_ME_SWAP2" });
+		List<ConfigAttribute> attr3 = SecurityConfig.createList(
+				new String[] { "GIVE_ME_SWAP3" });
+		List<ConfigAttribute> attr2and3 = SecurityConfig.createList(
+				new String[] { "GIVE_ME_SWAP2", "GIVE_ME_SWAP3" });
+		List<ConfigAttribute> attr4 = SecurityConfig.createList(
+				new String[] { "NEVER_CAUSES_SWAP" });
 
-        List<ConfigAttribute> attr1 = SecurityConfig.createList(new String[] {"GIVE_ME_SWAP1"});
-        List<ConfigAttribute> attr2 = SecurityConfig.createList(new String[] {"GIVE_ME_SWAP2"});
-        List<ConfigAttribute> attr3 = SecurityConfig.createList(new String[] {"GIVE_ME_SWAP3"});
-        List<ConfigAttribute> attr2and3 = SecurityConfig.createList(new String[] {"GIVE_ME_SWAP2","GIVE_ME_SWAP3"});
-        List<ConfigAttribute> attr4 = SecurityConfig.createList(new String[] {"NEVER_CAUSES_SWAP"});
+		assertThat(manager.decide(null, new SimpleMethodInvocation(), attr1,
+				"content-before-swapping")).isEqualTo("swap1");
 
-        assertEquals("swap1", manager.decide(null, new SimpleMethodInvocation(), attr1, "content-before-swapping"));
+		assertThat(manager.decide(null, new SimpleMethodInvocation(), attr2,
+				"content-before-swapping")).isEqualTo("swap2");
 
-        assertEquals("swap2", manager.decide(null, new SimpleMethodInvocation(), attr2, "content-before-swapping"));
+		assertThat(manager.decide(null, new SimpleMethodInvocation(), attr3,
+				"content-before-swapping")).isEqualTo("swap3");
 
-        assertEquals("swap3", manager.decide(null, new SimpleMethodInvocation(), attr3, "content-before-swapping"));
+		assertThat(manager.decide(null, new SimpleMethodInvocation(), attr4,
+				"content-before-swapping")).isEqualTo("content-before-swapping");
 
-        assertEquals("content-before-swapping",
-            manager.decide(null, new SimpleMethodInvocation(), attr4, "content-before-swapping"));
+		assertThat(manager.decide(null, new SimpleMethodInvocation(), attr2and3,
+				"content-before-swapping")).isEqualTo("swap3");
+	}
 
-        assertEquals("swap3", manager.decide(null, new SimpleMethodInvocation(), attr2and3, "content-before-swapping"));
-    }
+	@Test
+	public void testRejectsEmptyProvidersList() {
+		AfterInvocationProviderManager manager = new AfterInvocationProviderManager();
+		List list = new Vector();
 
-    public void testRejectsEmptyProvidersList() {
-        AfterInvocationProviderManager manager = new AfterInvocationProviderManager();
-        List list = new Vector();
+		try {
+			manager.setProviders(list);
+			fail("Should have thrown IllegalArgumentException");
+		}
+		catch (IllegalArgumentException expected) {
+			assertThat(true).isTrue();
+		}
+	}
 
-        try {
-            manager.setProviders(list);
-            fail("Should have thrown IllegalArgumentException");
-        } catch (IllegalArgumentException expected) {
-            assertTrue(true);
-        }
-    }
+	@Test
+	public void testRejectsNonAfterInvocationProviders() {
+		AfterInvocationProviderManager manager = new AfterInvocationProviderManager();
+		List list = new Vector();
+		list.add(new MockAfterInvocationProvider("swap1", MethodInvocation.class,
+				new SecurityConfig("GIVE_ME_SWAP1")));
+		list.add(Integer.valueOf(45));
+		list.add(new MockAfterInvocationProvider("swap3", MethodInvocation.class,
+				new SecurityConfig("GIVE_ME_SWAP3")));
 
-    public void testRejectsNonAfterInvocationProviders() {
-        AfterInvocationProviderManager manager = new AfterInvocationProviderManager();
-        List list = new Vector();
-        list.add(new MockAfterInvocationProvider("swap1", MethodInvocation.class, new SecurityConfig("GIVE_ME_SWAP1")));
-        list.add(Integer.valueOf(45));
-        list.add(new MockAfterInvocationProvider("swap3", MethodInvocation.class, new SecurityConfig("GIVE_ME_SWAP3")));
+		try {
+			manager.setProviders(list);
+			fail("Should have thrown IllegalArgumentException");
+		}
+		catch (IllegalArgumentException expected) {
+			assertThat(true).isTrue();
+		}
+	}
 
-        try {
-            manager.setProviders(list);
-            fail("Should have thrown IllegalArgumentException");
-        } catch (IllegalArgumentException expected) {
-            assertTrue(true);
-        }
-    }
+	@Test
+	public void testRejectsNullProvidersList() throws Exception {
+		AfterInvocationProviderManager manager = new AfterInvocationProviderManager();
 
-    public void testRejectsNullProvidersList() throws Exception {
-        AfterInvocationProviderManager manager = new AfterInvocationProviderManager();
+		try {
+			manager.afterPropertiesSet();
+			fail("Should have thrown IllegalArgumentException");
+		}
+		catch (IllegalArgumentException expected) {
+			assertThat(true).isTrue();
+		}
+	}
 
-        try {
-            manager.afterPropertiesSet();
-            fail("Should have thrown IllegalArgumentException");
-        } catch (IllegalArgumentException expected) {
-            assertTrue(true);
-        }
-    }
+	@Test
+	public void testSupportsConfigAttributeIteration() throws Exception {
+		AfterInvocationProviderManager manager = new AfterInvocationProviderManager();
+		List list = new Vector();
+		list.add(new MockAfterInvocationProvider("swap1", MethodInvocation.class,
+				new SecurityConfig("GIVE_ME_SWAP1")));
+		list.add(new MockAfterInvocationProvider("swap2", MethodInvocation.class,
+				new SecurityConfig("GIVE_ME_SWAP2")));
+		list.add(new MockAfterInvocationProvider("swap3", MethodInvocation.class,
+				new SecurityConfig("GIVE_ME_SWAP3")));
+		manager.setProviders(list);
+		manager.afterPropertiesSet();
 
-    public void testSupportsConfigAttributeIteration()
-        throws Exception {
-        AfterInvocationProviderManager manager = new AfterInvocationProviderManager();
-        List list = new Vector();
-        list.add(new MockAfterInvocationProvider("swap1", MethodInvocation.class, new SecurityConfig("GIVE_ME_SWAP1")));
-        list.add(new MockAfterInvocationProvider("swap2", MethodInvocation.class, new SecurityConfig("GIVE_ME_SWAP2")));
-        list.add(new MockAfterInvocationProvider("swap3", MethodInvocation.class, new SecurityConfig("GIVE_ME_SWAP3")));
-        manager.setProviders(list);
-        manager.afterPropertiesSet();
+		assertThat(manager.supports(new SecurityConfig("UNKNOWN_ATTRIB"))).isFalse();
+		assertThat(manager.supports(new SecurityConfig("GIVE_ME_SWAP2"))).isTrue();
+	}
 
-        assertFalse(manager.supports(new SecurityConfig("UNKNOWN_ATTRIB")));
-        assertTrue(manager.supports(new SecurityConfig("GIVE_ME_SWAP2")));
-    }
+	@Test
+	public void testSupportsSecureObjectIteration() throws Exception {
+		AfterInvocationProviderManager manager = new AfterInvocationProviderManager();
+		List list = new Vector();
+		list.add(new MockAfterInvocationProvider("swap1", MethodInvocation.class,
+				new SecurityConfig("GIVE_ME_SWAP1")));
+		list.add(new MockAfterInvocationProvider("swap2", MethodInvocation.class,
+				new SecurityConfig("GIVE_ME_SWAP2")));
+		list.add(new MockAfterInvocationProvider("swap3", MethodInvocation.class,
+				new SecurityConfig("GIVE_ME_SWAP3")));
+		manager.setProviders(list);
+		manager.afterPropertiesSet();
 
-    public void testSupportsSecureObjectIteration() throws Exception {
-        AfterInvocationProviderManager manager = new AfterInvocationProviderManager();
-        List list = new Vector();
-        list.add(new MockAfterInvocationProvider("swap1", MethodInvocation.class, new SecurityConfig("GIVE_ME_SWAP1")));
-        list.add(new MockAfterInvocationProvider("swap2", MethodInvocation.class, new SecurityConfig("GIVE_ME_SWAP2")));
-        list.add(new MockAfterInvocationProvider("swap3", MethodInvocation.class, new SecurityConfig("GIVE_ME_SWAP3")));
-        manager.setProviders(list);
-        manager.afterPropertiesSet();
+		// assertFalse(manager.supports(FilterInvocation.class));
+		assertThat(manager.supports(MethodInvocation.class)).isTrue();
+	}
 
-//        assertFalse(manager.supports(FilterInvocation.class));
-        assertTrue(manager.supports(MethodInvocation.class));
-    }
+	// ~ Inner Classes
+	// ==================================================================================================
 
-    //~ Inner Classes ==================================================================================================
+	/**
+	 * Always returns the constructor-defined <code>forceReturnObject</code>, provided the
+	 * same configuration attribute was provided. Also stores the secure object it
+	 * supports.
+	 */
+	private class MockAfterInvocationProvider implements AfterInvocationProvider {
 
-    /**
-     * Always returns the constructor-defined <code>forceReturnObject</code>, provided the same configuration
-     * attribute was provided. Also stores the secure object it supports.
-     */
-    private class MockAfterInvocationProvider implements AfterInvocationProvider {
-        private Class secureObject;
-        private ConfigAttribute configAttribute;
-        private Object forceReturnObject;
+		private Class secureObject;
 
-        public MockAfterInvocationProvider(Object forceReturnObject, Class secureObject, ConfigAttribute configAttribute) {
-            this.forceReturnObject = forceReturnObject;
-            this.secureObject = secureObject;
-            this.configAttribute = configAttribute;
-        }
+		private ConfigAttribute configAttribute;
 
-        public Object decide(Authentication authentication, Object object, Collection<ConfigAttribute> config,
-            Object returnedObject) throws AccessDeniedException {
-            if (config.contains(configAttribute)) {
-                return forceReturnObject;
-            }
+		private Object forceReturnObject;
 
-            return returnedObject;
-        }
+		public MockAfterInvocationProvider(Object forceReturnObject, Class secureObject,
+				ConfigAttribute configAttribute) {
+			this.forceReturnObject = forceReturnObject;
+			this.secureObject = secureObject;
+			this.configAttribute = configAttribute;
+		}
 
-        public boolean supports(Class<?> clazz) {
-            return secureObject.isAssignableFrom(clazz);
-        }
+		public Object decide(Authentication authentication, Object object,
+				Collection<ConfigAttribute> config, Object returnedObject)
+						throws AccessDeniedException {
+			if (config.contains(configAttribute)) {
+				return forceReturnObject;
+			}
 
-        public boolean supports(ConfigAttribute attribute) {
-            return attribute.equals(configAttribute);
-        }
-    }
+			return returnedObject;
+		}
+
+		public boolean supports(Class<?> clazz) {
+			return secureObject.isAssignableFrom(clazz);
+		}
+
+		public boolean supports(ConfigAttribute attribute) {
+			return attribute.equals(configAttribute);
+		}
+	}
 }
